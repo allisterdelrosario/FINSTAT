@@ -1,0 +1,392 @@
+---
+title: "Panel Data Regression on World Happiness Report"
+author: "Allister James R. Del Rosario"
+date: '2022-07-05'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<style type ="text/css">
+body {
+font-size: 12pt;
+font-family: mono;
+text-align: justify}
+</style>
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+library("tidyverse")
+library("stargazer")
+library("magrittr")
+library("haven")
+library("gplots")
+library("plm")
+library("knitr")
+library("kableExtra")
+library("xtable")
+library("readr")
+library("dplyr")
+library("plyr")
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(readr)
+Happiness <- read_csv("Happiness.csv")
+View(Happiness)
+```
+
+
+# Background of the Study 
+<br> 
+
+|     The World Happiness Report is a fundamental study of global happiness. The first report was released in 2012, the second in 2013, the third in 2015, and the fourth in 2016. The World Happiness Report 2017, which rates 155 countries based on their happiness levels, was released on March 20th at the United Nations during an event commemorating the International Day of Happiness. The report's global impact is growing as governments, organizations, and civil society increasingly uses happiness indices to drive policy decisions. Leading experts in economics, psychology, survey analysis, national statistics, health, public policy, and other domains explain how well-being assessments can be used to analyze nations' progress properly. The papers examine the current state of happiness around the globe and demonstrate how the emerging science of happiness explains personal and country differences in satisfaction. The Gallup World Poll data is used to calculate happiness ratings and rankings. The scores are based on responses to the poll's main life evaluation question. The Cantril ladder question asks respondents to imagine a ladder with the best possible life for them as a ten and the worst possible life as a 0 and to rank their actual lives on that scale. The results are based on nationally representative samples from 2013 to 2016 and employ Gallup weights to make the estimates representative.
+
+</span>
+
+
+# Description of the Data
+<br>
+
+|     This study will make use of the dataset: "World Happiness Report." The dataset consists of the factors that affect the happiness scores of each country in the world from 2015 to 2019. The dataset contains 780 observations with nine variables each. The dataset is an unbalanced panel data that includes 165 units and five years.
+
+|     Among all the variables provided by the dataset, this study will refer to Happiness Score as its dependent variable. The dependent variable Happiness Score refers to the level of satisfaction of the citizen in their country based on the six factors. With this, by using Panel Data Regression, the researchers are expected to determine the factor that has the most influence on the Happiness Score based on the following independent variables: Economy, Social Support, Life Expectancy, Freedom, Government Corruption and Generosity.
+
+</span>
+
+```{r, echo=FALSE}
+Happy <- Happy %>% dplyr::select(Country, Year, Happiness.Score, Economy, Social.support, Life.Expectancy, Freedom, Government.Corruption, Generosity)
+plm::pdim(Happy)
+```
+
+
+```{r, echo=FALSE}
+tbl <- xtable(Happy)
+knitr::kable(tbl, digits=5, align="c", Caption= "Data - World Happiness")
+```
+
+
+# Objectives of the Study
+<br>
+
+|     The researchers' goal in this work is to examine the figures from the given information and offer a tabular and graphical visualization of the World Happiness Score of each country. This study will focus on the "Happiness Score" as the dependent variable in relation to the factors, namely: Economy, Social Support, Life Expectancy, Freedom, Government Corruption, and Generosity which are deemed independent variables. Through a Panel Data Regression model, the researchers aim to:
+|        *To identify the null and alternative hypotheses that will be           tested;
+|        *To generate a Panel Data Regression model that will produce            credible results by testing the significance of each                   variable;
+|        *To create a visual representation and analysis of the                  regression model through plots and graphs;
+|        *To discover and specify the independent variables that most            influence the Happiness score of countries.
+|        *To determine the most significant IV that affects the                  Happiness Scores of each country in the World;
+|        *To determine the average Happiness score in the World.
+|        *To determine which Panel Data Regression model is the best in           analyzing the World Happiness data.
+
+</span>
+
+
+
+# Plots for Panel Data
+<br>
+
+# Unobserved Heterogeneity per Country
+
+```{r, echo=FALSE, warning=FALSE}
+gplots::plotmeans(Happiness.Score ~ Country, main = "Heterogeneity across countries", data = Happy)
+```
+<br>
+
+|     The plot shows that there are differences in the means among the countries which is indicative that there is a presence of heterogeneity. The coefficients in the model differ for each cross-section in the panel dataset. This will be a point of contention on which best model shall be used. In this case, there is a need to observe the heterogeneity. The fixed effects and random effect must be taken into consideration. Since homogenous is absent in the model. The researchers has less preference on pooled panel data.
+
+</span>
+
+
+# Unobserved Heterogeneity per year
+```{r, echo=FALSE, warning=FALSE}
+plotmeans(Happiness.Score ~ Year, main = "Heterogeneity across Year", data = Happy )
+```
+<br>
+
+|     Since there is a differences in the means among parameters. Then the researchers should take a closer look on the heterogeneity of model across time.  Based on the result, the happiness score increases over time which shows that the economy, social support, life expectancy, freedom, and government corruption, generosity have a positive effect on the happiness score over time.
+
+</span>
+
+
+# Overall Variation
+
+<center>
+
+$$x_{it} - \bar{x}$$
+<center>
+
+```{r, echo=FALSE}
+Happy %>%
+  select(Happiness.Score, Economy, Social.support, Life.Expectancy, Freedom, Government.Corruption, Generosity) %>%
+  mutate_all(function(x) {x - mean(x, na.rm= T)}) %>%
+  as.data.frame %>%
+  stargazer(type = "text", omit.summary.stat = "mean", digits = 2)
+```
+<br>
+
+|     For overall variations, variation between variables and overall means shows the standard deviation for Happiness.Score is 1.13. Economy is 0.41, Social.support 0.33, Life.Expectancy 0.25, Freedom 0.15, Government.Corruption 0.12, Generosity 0.12.
+
+</span>
+
+# Between Variation
+$$\bar{x}_{i} - \bar{x}$$
+
+```{r, echo=FALSE}
+
+Happy %>% group_by(Country) %>%
+  select(Happiness.Score, Economy, Social.support, Life.Expectancy, Freedom, Government.Corruption, Generosity) %>%
+  summarize_all(mean) %>%
+  as.data.frame %>%
+  select(-Country) %>%
+  stargazer(type = "text", digits = 2)
+```
+<br>
+
+|     For between variations, variation between the mean of the variable per each cross-sectional unit and the overall mean. It is computed by each country's average and subtracted from the overall mean. The variables have the following standard deviations. For Hapiness.Score 5.38. For Economy 0.91. For Social.Support 1.07. For Life.Expectancy 0.60. For Freedom 0.41. For Government Corruption 0.17. For Generosity 0.18.
+
+</span>
+
+# Witin variation
+$${x}_{it} - \bar{x}_{i}$$
+```{r, echo=FALSE}
+
+Happy %>% group_by(Country) %>%
+  select(Happiness.Score, Economy, Social.support, Life.Expectancy, Freedom, Government.Corruption, Generosity) %>%
+  mutate_all(function(x) {x - mean(x)}) %>%
+  as.data.frame %>%
+  select(-Country) %>%
+  stargazer(type = "text", omit.summary.stat = "mean", digits = 2)
+```
+
+<br>
+
+|     For within variation, variation between variables with the mean of the variables per cross-sectional unit. The variables have the following standard deviation. . For Hapiness.Score 0.21. For Economy 0.06. For Social.Support 0.18 For Life.Expectancy 0.07. For Freedom 0.05. For Government Corruption 0.08 For Generosity 0.08. 
+
+</span>
+
+<br>
+Overall the variation is most tremendous on between variations than within variation and overall variation. Thus, the variation is most remarkable between the country rather than the variation within each country and overall variation.
+
+</span>
+
+# Panel Data Regression Models
+
+# 1.) Pooled Ordinary Least Squares
+
+Pooled regression is standard ordinary least squares (OLS) regression without any cross-sectional or time effects. The error structure is simply $u_{it} = e_{it}$ , where the $e_{it}$ are independently and identically distributed with zero mean and variance
+```{r, echo=FALSE}
+model_ols <- plm(formula = Happiness.Score ~ Economy + Social.support + Life.Expectancy + Freedom + Government.Corruption + Generosity,
+                 data = Happy,
+                 index = c("Country", "Year"), #c(group index, time index)
+                 model = "pooling")
+summary(model_ols)
+```
+<br>
+
+|     The results of the Pooled OLS panel data regression output and analysis revealed that the adjusted R-squared was equal to 76.425 percent. This means that the independent variables Economy, Social.support, Life.Expectancy, Freedom, Government.Corruption, Generosity may explain 76.425 percent of the Happiness.score, which is the dependent variable. It also revealed an f-statistic of 421.897 on degrees of freedom 6 and 773, respectively, which are degrees of freedom 1 and 2.
+
+</span>
+
+<br>
+
+|     According to the findings, the null hypothesis should be rejected because the p-value is less than the significance threshold of.05. As a result, there is statistical evidence that at least one of these variables is not equal to zero. Similarly, after doing the individual test of significance, it was determined that all six predictors were significant with a p-value of < 0.05. These are significant indicators because they show that all independent factors influence the dependent variable, which is the Happiness.score.
+</span>
+
+<br>
+
+|     The model provides the following interpretations for each variable: (1) for every 1 increase in Economy, there is a corresponding increase of 1.16 in Happiness.score.(2) for every 1 increase in Social.support, there is a corresponding increase of 0.685979 in Happiness.score.(3) for every 1 increase in Life.Expectancy, there is a corresponding increase of 0.981051 in Happiness.score.(4) for every 1 increase in Freedom, there is a corresponding increase of 1.458341 in Happiness.score. (5) for every 1 increase in Government.corruption, there is a corresponding increase of 0.353629 in Happiness.score.(6) for every 1 increase in Generosity, there is a corresponding increase of 1.046509 in Happiness.score.
+
+</span>
+
+
+# 2.) Fixed Effect
+<br>
+
+|     According to Shihe Fan(n.d), Individual differences are taken into account by the fixed effect model, which results in different intercepts of the regression line for various individuals. In this example, the model assigns the subscript I to the constant term 1, as seen below; constant terms determined in this manner are referred to as fixed effects.
+
+</span>
+
+$$y_{it}=\beta_{1i}+\beta_{2i}x_{2it}+\beta_{3i}x_{3it}+...+\beta_{ni}x_{nit}+e_{it}$$
+
+```{r, echo=FALSE}
+model_fe <- update(model_ols, model = "within", effect = "individual")
+summary(model_fe)
+```
+<br>
+
+|     According to the findings, the null hypothesis should be rejected because the p-value is less than the significance threshold of p-value at < 0.0505. The following parameters are significant: (1) Economy at 1% level, (2) Life.Expectancy at 1% level, (3) Freedom at 0.1% level, ceteris paribus. 
+
+</span>
+
+<br>
+
+|     The model provides the following interpretations for each variable: (1) for every 1 increase in Economy per cross-sectional unit (country) over its mean, there is a corresponding increase of 0.369562 in Happiness.score.(2) for every 1 increase in Life.Expectancy per cross-sectional unit (country) over its mean, there is a corresponding increase of 0.344902 in Happiness.score.(3) for every 1 increase in Freedom per cross-sectional unit (country) over its mean, there is a corresponding increase of 0.344902 in Happiness.score.
+
+</span>
+
+</span>
+
+# Summarize the individual specific effects ise
+```{r, echo=FALSE}
+ise <- fixef(model_fe, type = "dmean")
+ise %>% head(15)
+```
+
+```{r, echo=FALSE}
+data.frame(ise) %>% stargazer(type = "text")
+```
+<br>
+|     The researchers examine the unique effects of the first 15 countries here. Each country has its own unique set of effects that do not change over time. It is something special to the country that raises or lowers the Happiness.score.
+
+</span>
+
+<br>
+
+|     Afghanistan has a Happiness.score that is 1.37 lower than the global Happiness.score. Albania also has a Happiness.score of 0.70 lower than the global average. On the other hand, Australia has a Happiness.score of 1.489, higher than the global average. Out of the 165 countries the researchers examined, it can be noted that there is a country with a 1.776 higher Happiness.score compared to the global average. On other hand, there is a country with that achieved a Happiness.score of 1.822 lower Happiness.score compared to the global average. The researchers are not sure what affects this country that causes its Happiness.score to be more excellent or lower.
+
+</span>
+
+
+# 3.) Random Effects  
+```{r, echo=FALSE}
+model_re <- update(model_ols, model = "random", random.method = "walhus")
+summary(model_re)
+```
+<br>
+
+|     Based on the assumption of normal distribution, the random-effects model allows for inferences on population data. Individual-specific effects are assumed to be uncorrelated with the independent variables in the random-effects model. The following parameters are significant: (1) Economy at 0% level, (2) Social.support at 10% level, and (3) Life.Expectancy at 0% level, (4) Freedom at 0% level, (5) Government.Corruption at 0.1% level, (6) Generosity at 0% level, ceteris paribus. For every 1 unit of economy, there is a corresponding 2.759507 increase in Happiness score. For every 1 unit social.support, there is a corresponding 1.337231 increase in Happiness score. For every 1 unit of Life.expectancy, there is a corresponding 0.974565. increase in Happiness score. For every 1 unit of Freedom, there is a corresponding 1.113488 increase in Happiness score. For every 1 unit of Government. Corruption, there is a corresponding 0.452671 increase in Happiness score. For every 1 unit of Generosity, there is a corresponding increase in Happiness score of 0.803268. The theta shows that the median is 0.01482. The 1-theta is at 0,98518, which is relatively close to 1. Therefore, the pooled effect is closer to RE.
+
+</span>
+
+# TESTING WHICH OF THE METHODS IS BEST
+
+# 1.) Pooled OLS vs Fixed Effects within: Use the function pFtest
+<br>
+
+|     The pFtest is an individual and/or time effect test based on a comparison of the within and pooling models. The plm method's argument is two plm objects, the first of which is a within model and the second of which is a pooling model. Depending on the influences introduced in the inside model, the effects assessed are either individual, temporal, or twoway. If the p-value is < 0.05 then we will reject the null hypothesis. The null hypothesis of the test is:
+
+</span>
+
+<br>
+
+|                                                     HO: There are no significant fixed effects.
+
+</span>
+
+
+```{r, echo=FALSE}
+pFtest <- plm::pFtest(model_fe, model_ols)
+pFtest
+```
+
+<br>
+
+|    As stated previously, if the p-value is < 0.05 then we will reject the null hypothesis. As we can see, the P value for the pFtest shows a value of 2.2e-16, which means that the researchers will Reject the null hypothesis that there are no significant effects. Therefore we will conclude that Fixed effects Panel Data Regression model is better compared to the Pooled OLS.
+
+</span>
+
+<br>
+
+# 2.) Pooled OLS vs Random Effects model: Breush-Pagan Test
+<br>
+
+|     The Breusch-Pagan test is used to detect whether or not a regression model contains heteroscedasticity. If the p-value of the test is less than a certain level of significance (i.e. =.05), we reject the null hypothesis and infer that heteroscedasticity exists in the regression model. Otherwise, the null hypothesis is not rejected. It is presumed that homoscedasticity exists in this scenario.
+The following null and alternative hypotheses are used in the test:
+
+</span>
+
+<br>
+
+|        Null Hypothesis (H0): Homoscedasticity is present (the residuals are distributed with equal variance)
+
+</span>
+
+<br>
+
+|        Alternative Hypothesis (HA): Heteroscedasticity is present (the residuals are not distributed with equal variance)
+
+</span>
+
+<br>
+$$H_{0}:\;\sigma_{u}^{2}=0,\;\;\;H_{A}:\sigma_{u}^{2}>0$$
+
+</span>
+```{r, echo=FALSE}
+retest <- plm::plmtest(model_ols, effect = "individual")
+print(retest)
+
+```
+<br>
+
+|    As stated above, if the p-value is < 0.05 then we will reject the null hypothesis. As we can see, the P value for the Breush-Pagan Test shows a value of 2.2e-16, which means that the researchers will Reject the null hypothesis that there are no significant  effects. Therefore we will conclude that Random effects Panel Data Regression model is better compared to the Pooled OLS.
+
+# 3.) Random Effects model vs Fixed Effects within: The Hausman Test
+<br>
+
+|     The Hausman test (also known as the Durbin-Wu-Hausman test) is used to determine whether or not an estimate for an unknown parameter is consistent. It is also used in linear regression to determine whether to use a fixed effect model or a random effect model. In interpreting the result from a Hausman Test, If the p-value of the test is less than a certain level of significance (i.e. =.05), reject the null hypothesis.
+<br>
+
+|        HO: FE coefficients are not significantly different from the RE coefficients (RE is better compared to FE)
+</span>
+
+<br>
+
+|        Ha: FE coefficients are significantly different from the RE coefficients
+</span>
+```{r, echo=FALSE}
+plm::phtest(model_fe, model_re)
+
+```
+
+
+<br>
+
+|     As stated above, if the p-value is < 0.05, then we will reject the null hypothesis. As we can see, the P value for the Hausman Test shows a value of 2.2e-16, which means that the researchers will Reject the null hypothesis. Therefore, the researchers can conclude that fixed effect panel data regression model is better to use compared to the Random Effects Panel Data regression model. The researchers can also conclude that the Fixed Effect panel data regression model is the best model to use out of the three for finding the World Happiness Score.
+</span>
+
+# Conclusion
+
+
+<br>
+
+|     To adequately analyze the relationship between the dependent variable (Happiness Score) and independent variables (Economy, Social.support, Life.Expectancy, Freedom, Government.Corruption, Generosity). The researchers made use of Data panel regression, particularly the random effect model, pooled OLS model, and fixed model. 
+
+
+</span>
+
+<br>
+
+|     For the data - Happiness.score, there are disparities in the means of the countries, indicating the presence of heterogeneity. The model's coefficients differ for each cross-section in the panel dataset. Because there are discrepancies in the means of the parameters, the researchers should focus their attention on the model's heterogeneity across time. According to the findings, the happiness score rises over time, indicating that the economy, social support, life expectancy, freedom, government corruption, and Generosity have a favorable effect on the happiness score. Based on the result of the panel-data model, the following inferences can be made: (1) For the random effect model, the researchers found that all of the parameters are significant in the model. The theta shows that the model pooled effect is closer to RE. (2) For the random effect model, the following For every 1 unit of economy, there is a corresponding 2.759507 increase in Happiness score. This may be because more goods produced means more labor demand, employment, and income generation to purchase the goods and services produced. People can afford to buy more goods and services as economic growth raises real per capita income. As a result, well-being and subjective happiness may improve. For every 1 unit social.support, there is a corresponding 1.337231 increase in Happiness score. Social support can boost an individual's self-confidence, self-disclosure, and self-esteem, assisting them in achieving goals, life satisfaction, and happiness. For every 1 unit of Life.expectancy, there is a corresponding 0.974565. increase in Happiness score. Longevity increases people's ability to work longer. Working longer has advantages such as keeping people mentally engaged with work they value and enjoy and having a sense of purpose. For every 1 unit of Freedom, there is a corresponding 1.113488 increase in Happiness score. People consistently connected higher life satisfaction with a more immense belief in free choice. For every 1 unit of Government.Corruption, there is a corresponding 0.452671 increase in Happiness score. Unfortunately, corruption usually occurs when some people are willing to utilize illegal tactics to maximize their personal or business advantage. For every 1 unit of Generosity, there is a corresponding increase in Happiness score of 0.803268. This may be because giving to others activates a brain region associated with contentment and the reward cycle. 
+
+
+</span>
+
+<br>
+
+|     (3) For pooled OLS model model According to the findings of Pooled OLS, the null hypothesis should be rejected because the p-value is less than the significance threshold of.05. it was determined that all six predictors were significant with a p-value of < 0.05. These are significant indicators because they show that all independent factors influence the dependent variable, which is the Happiness.score. The Pooled OLS model provides the following interpretations for each variable: for every 1 increase in Economy, there is a corresponding increase of 1.16 in Happiness.score. As stated earlier, it may be due to the increased in income generation in the economy due to more demand and sales in goods. For every 1 increase in Social.support, there is a corresponding increase of 0.685979 in Happiness.score. As also mentioned above, social support can boost an individual's self-confidence, self-disclosure, and self-esteem, assisting them in achieving goals, life satisfaction, and happiness. For every 1 increase in Life.Expectancy, there is a corresponding increase of 0.981051 in Happiness.score. As everyone know, people generally want to live longer, so with higher life expectancy, happiness.score will surely follow. For every 1 increase in Freedom, there is a corresponding increase of 1.458341 in Happiness.score. The freedom to choose is key to being a happy person (Fischer,2011). For every 1 increase in Government.corruption, there is a corresponding increase of 0.353629 in Happiness.score. For every 1 increase in Generosity, there is a corresponding increase of 1.046509 in Happiness.score., 
+
+
+</span>
+
+<br>
+
+|     (4) For fixed model, The null hypothesis should be rejected, according to the findings, because the p-value is less than the significance level of 0.050. The following factors are significant: economy at 1% level, life expectancy at 1% level, freedom at 0.1 percent level, and so on. The Fixed Effect model interprets each variable as follows: For every one rise in Economy per cross-sectional unit (country) over its mean, there is a 0.369562 increase in Happiness.score. There is a 0.344902 increase in Happiness.score for every one increase in Life.Expectancy per cross-sectional unit (country) over its mean. Every one increase in Freedom per cross-sectional unit (country) over its mean corresponds to a 0.344902 increase in Happiness.score.
+
+
+</span>
+
+<br>
+
+|     The researchers can test all the Panel Data regression assumptions. The assumptions on Panel Data regression are the following:(1) pFtest, (2) Breush-Pagan Test, (3) The Hausman Test, (4a) Heterogeneity across countries and (4b) Heterogeneity across Time. Based on Heterogeneity across countries, There are variances in means among the countries, indicating the presence of heterogeneity. The model's coefficients differ for each cross-section in the panel dataset. As for the Heterogeneity across Time, the researchers found that the happiness score increases over time which shows that the economy, social support, life expectancy, freedom, and government corruption, generosity have a positive effect on the happiness score over time.
+
+</span>
+
+<br>
+
+|     In finding the best model, the researchers first used the pFtest which is a test based on a comparison of the within and pooling models. The model resulted with a P value of 2.2e-16, which rejects the null hypothesis that there are no significant effects. Therefore the researchers concluded that Fixed effects Panel Data Regression model is better compared to the Pooled OLS. The Breush-Pagan Test was employed by the researchers to determine whether or not a regression model has heteroscedasticity. If the test's p-value is less than a particular level of significance (e.g., =.05), reject the null hypothesis and conclude that heteroscedasticity occurs in the regression model. The Breush-Pagan Test yielded a p-value of 2.2e-16, indicating that the researchers will reject the null hypothesis of no significant effects. As a result, the researchers determined that the Random Effects Panel Data Regression model is superior. The Hausman test was the final model employed by the researchers. It's used to see if an estimate for an unknown parameter is consistent. The Hausman Test P value is 2.2e-16, indicating that the researchers will reject the null hypothesis. As a result, the researchers can infer that the fixed effect panel data regression model outperforms the Random Effects Panel Data regression model. The researchers can also infer that of the three models, the Fixed Effect panel data regression model is the best to utilize for calculating the World Happiness Score.
+</span>

@@ -1,0 +1,531 @@
+---
+title: "Modeling Volatility in Apple stock during Financial Crisis: GARCH Approach"
+author: "Del Rosario, Allister James"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+<style type ="text/css">
+body {
+font-size: 12pt;
+font-family: mono;
+text-align: justify}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Libraries
+```{r message = FALSE, warning = FALSE}
+library(quantmod)
+library(xts)
+library(PerformanceAnalytics)
+library(rugarch)
+library(tsm)
+library(forecast)
+library(FinTS)
+library(MTS)
+```
+
+
+```{r}
+quantmod::getSymbols("AAPL", from = "2007-01-01", to = "2021-12-31")
+quantmod::chartSeries(AAPL)# Chart for whole period
+```
+
+
+# Background of the Study
+
+<br>
+
+
+|     Academics, policymakers, and practitioners have paid increasing attention to financial market volatility over the past two decades. Policymakers and financial market participants are concerned about volatility because it can be used as a risk indicator. The high volatility of financial market returns may also deter investors from making stock market investments, leading to increased uncertainty. As a result, we must determine the appropriate volatility model in order to capture the volatility. A simple GARCH model is used to examine the performance of Apple Inc stock returns in this study. This study looks into the relationship between stock returns and volatility in Apple Inc stock.  A Generalized Autoregressive Conditional Heteroscedasticity (GARCH) model is used to estimate volatility of the stock returns.  The sample period is from January 2007 to December 2021.
+
+</span>
+
+# Daily returns
+
+```{r}
+StockReturn<- PerformanceAnalytics::CalculateReturns(AAPL$AAPL.Adjusted) 
+View(StockReturn)
+StockReturn <- StockReturn[-1]
+chartSeries(StockReturn)
+hist(StockReturn)
+chart.Histogram(StockReturn,
+                methods = c('add.density', 'add.normal'),
+                colorset = c('blue', 'green', 'red'))
+```
+<br>
+
+|    The plot is not normally distributed. Indicative of flat tails and more negative returns, therefore the researchers think that there is a need to examine the normality of the data once the model is made. This will be examined through Normal Q-Q plot. 
+
+</span>
+
+# DataSet
+
+```{r, warning = FALSE}
+plot(StockReturn)
+chartSeries(StockReturn)
+tseries::adf.test(StockReturn)
+```
+
+<br>
+
+|    Before the researchers can model the time series. The data itself should stationary. Therefore, 
+the reseachers will utilize Augmented Dickey Fuller test (ADF Test) is a common statistical test used to test whether a given Time series is stationary or not. Based on the illustration, it can be infer that the data is stationary since it doesn't have a trend and the mean is constant.Also based on ADF Test the model is stationary. Therefore this data is a candidate for time series modelling. 
+
+</span>
+
+# Measuring Annual Volatility
+
+```{r}
+sd(StockReturn)
+sd(StockReturn)*sqrt(252)
+
+sd(StockReturn["2007"])*sqrt(252) 
+sd(StockReturn["2008"])*sqrt(252) # Annualized volatility for 2008; volatility was the highest
+sd(StockReturn["2009"])*sqrt(252)
+sd(StockReturn["2010"])*sqrt(252)
+sd(StockReturn["2011"])*sqrt(252)
+sd(StockReturn["2012"])*sqrt(252)
+sd(StockReturn["2013"])*sqrt(252)
+sd(StockReturn["2014"])*sqrt(252) # The volatility is 2nd to the lowest
+sd(StockReturn["2015"])*sqrt(252)
+sd(StockReturn["2016"])*sqrt(252) 
+sd(StockReturn["2017"])*sqrt(252) # The volatility for 2017 is lowest
+sd(StockReturn["2018"])*sqrt(252)
+sd(StockReturn["2019"])*sqrt(252)
+sd(StockReturn["2020"])*sqrt(252) # The volatility for 2020 is 2nd to the highest
+sd(StockReturn["2021"])*sqrt(252) 
+```
+
+<br>
+
+|     The volatility of a stock is the variance in its price over time. For example, one stock may swing dramatically higher and lower, but another may move in a much steadier, less chaotic manner. Both stocks may finish at the same price at the end of the day, but the journey they took to get there might vary considerably. The researchers require historical prices for the given stock to calculate volatility. The researchers used the Apple Inc analysis from January 1, 2007, to December 31, 2021. Volatility is measured by standard deviation of a stock. Therefore SD Function is used.  (Motley Fool Staff, 2016)
+
+</span>
+
+<br>
+
+|     The researchers would like to determine the annualized volatility of the stock returns. This is achieved by multiplying the daily standard deviation by the square root of 252 to get this volatility in yearly terms. This assumes that a given year has 252 trading days. The trading day, also known as regular trading hours (RTH), is the time frame during which the stock exchange is open, as opposed to electronic or extended trading hours (ETH). The NYSE and NASDAQ each have around 252 trading days each year. This is calculated as 365.25 (average number of days per year) * 5/7 (percentage of work days per week) - 6 (weekday holidays) - 4*5/7 (fixed date holidays) = 252.03 252. (Smigel, 2022)
+
+</span>
+
+<br>
+
+|     The results show that the volatility of stock is 0.3775515, 0.5820479, 0.3392201, 0.2675857, 0.2625557, 0.2947313, 0.2855271, 0.2165738, 0.267373, 0.2333829, 0.1760571, 0.2874213, 0.2613835, 0.4664972, 0.2514737 for the year 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 , 2018, 2019, 2020, and 2021 respectively.  An interesting observation realized by the researchers is that both years 2008 and the year 2020 have the highest volatility. 2008 was a year when the financial crisis with cheap credit and lax lending standards fueled a housing bubble. While 2020 is a global economic recession caused by the COVID-19 pandemic; therefore, the stock movement is relatively high in a slumping economy. On the other hand, the lowest volatility is in the year 2017 and 2014.  In 2017 the U.S. economy gained momentum 2017, despite the growth slowed at the end of the year. (Gillespie, 2018) Also In 2014, the economy rose at an annual rate of 5.1% in the second quarter and by 4.9% in the third quarter. (Young, 2018). Contrary to the economic slump, the volatility is low in an economic boom.
+
+</span>
+
+
+```{r}
+par(mfrow=c(3,1)) 
+PerformanceAnalytics::chart.RollingPerformance(R = StockReturn["2007::2021"],
+                         width = 22,
+                         FUN = "sd.annualized",
+                         scale = 252,
+                         main = "Apple's monthly rolling volatility")
+
+PerformanceAnalytics::chart.RollingPerformance(R = StockReturn["2007::2021"],
+                         width = 66,
+                         FUN = "sd.annualized",
+                         scale = 252,
+                         main = "Apple's Three months rolling volatility")
+
+PerformanceAnalytics::chart.RollingPerformance(R = StockReturn["2007::2021"],
+                         width = 252,
+                         FUN = "sd.annualized",
+                         scale = 252,
+                         main = "Apple's yearly rolling volatility")
+```
+
+<br> 
+
+|    Another way to analyze the annual stock volatility of Apple Inc. is through the Rolling performance function from the Performance Analytics chart. This is considered the 20-day monthly, 60-day monthly, and rolling volatility, less noisy than the daily volatility shown in the daily returns chart. The researchers can draw similar inferences from the standard deviation of annual returns of AAPL. As the researchers plot the data from daily to monthly and yearly, the plot becomes less noisy due to fewer observations. The lower timeframe, the more it will capture the volatility of a stock. All charts show significant spikes in 2008 and 2020, which were caused early by the economic downturn.
+
+</span> 
+
+
+# GARCH
+
+<br>
+
+|     Using rolling volatility estimates, the researchers can only see how volatile the market has been in the past. Effective investing requires a focus on the future. Rolling charts, on the other hand, are less reliable because GARCH models are used to predict future returns' volatility. A GARCH model, on the other hand, provides a higher level of accuracy.
+
+</span>
+
+#  sGARCH (standard GARCH) using normal distribution
+
+
+```{r}
+spec <-  ugarchspec()
+spec
+```
+
+<br>
+
+|     The data was modeled with GARCH using the *rugarch package* by the researchers. The urgarchspec function is used to identify the model's specifications. Urgarchspec has three components: mean, variance, and distribution.
+
+</span>
+ 
+
+```{r}
+sGARCH1 <- ugarchspec(mean.model = list(armaOrder = c(0,0)),
+                variance.model = list(model = "sGARCH"),
+                distribution.model = 'norm')
+sGARCH1Model <- ugarchfit(data = StockReturn, spec = sGARCH1)
+sGARCH1Model
+```
+
+**Parameters**
+
+<br>
+
+|     The mean returns model (sGARCH1Model) does not have Autoregressive and Moving Average components. Only a certain mean average and certain error terms are used. Arma(0,0) *rt = mu (mean) + et* (no ar and ma component).  The result shows a GARCH Model of sGARCH (1,1) Lag-1 of error squared and lag-1 sigma squared. Mean model of ARFIMA (0,0,0) The study deals with daily, monthly, and yearly data. Therefore, ARFIMA is unnecessary since it is for second and millisecond time frames. The parameters include a certain constant of 0.002040 and a certain error 0.000245—omega of 0.000014, alpha 1 of 0.112371, beta 1 of 0.851386. The parameters show that it is significant. Suppose the researchers sum up the model's omega, alpha1, and beta1, which does not go beyond 1. Thus, the researchers conclude that the model is mean-reverting. 
+
+</span>
+
+
+```{r}
+(garchcoef <- coef(sGARCH1Model))
+```
+
+<br>
+
+|     The coefficients of sGARCH1Model1 includes mu 2.040495e-03 ,omega  1.448189e-05 alpha1 1.123705e-01, and beta1 8.513860e-01 
+
+</span>
+
+<br>
+
+```{r}
+(garchuncvar <- uncvariance(sGARCH1Model))
+sqrt(garchuncvar)
+
+```
+
+<br>
+
+|     The long run volatility os the Apple Inc. stock shows 0.0199893. This denotes that in the long run the stock will have a low volatility based on sGARCH1Model. 
+
+</span> 
+
+
+
+**Model for Variability**
+
+<br>
+
+$$y_{t}=\epsilon_{t}\sigma_{t}, \sigma^2_{t} = 0.000014 + \epsilon_{t} + 0.112371\ast\epsilon_{t-1}^2 + 0.851386\ast\sigma_{t-1}^2$$
+</span>
+
+**Model for Return**
+
+
+<br>
+
+$$Model_{Return}: R{t}= Stockreturn_{t}= 0.002040 + \epsilon_{t}$$
+</span>
+
+<br>
+
+**Auto correlation of standardized residuals**
+
+<br>
+
+
+|     For Weighted Ljung-Box Test on Standardized Residuals, which tests the auto-correlation. The null hypothesis H0: No serial correlations. At Lag[1] p-value 0.2982, at Lag[2] p-value 0.4170, and Lag[5] p-value of 0.2463 which are all greater than .05 ;therefore, the researchers fail to reject the null hypothesis. Thus the model shows that there are no correlations.
+
+
+</span>
+
+<br>
+
+|     While for Weighted ARCH LM Tests ARCH Lag[3] p-value 0.4798, ARCH Lag[5] p-value 0.4101, and ARCH Lag[7] p-value 0.6136 are all greater than .05; therefore, the researchers also fail to reject the null hypothesis. There is no correlation based on LM Tests.
+
+</span>
+
+**White noise**
+
+<br>
+
+|     Researchers can infer that residuals behave like white noise because there is no serial correlation between them and the squared residuals (stationary)
+
+</span>
+
+
+**Sign biased test**
+
+<br>
+
+|     R's important to note that when the sign bias test is used, the variable St1 is used, which takes the value of one when t1 is negative. This experiment investigates the impact of unexpectedly high or low return shocks on the model's predicted volatility. (Engle, 1993, 1749-1778)
+
+</span>
+
+
+<br>
+
+|     If H0:the additional parameters (dummy variables) are set to 0, the model has been correctly specified.Ha: The additional parameters are != 0 (indicates misspecification of the model).
+
+</span>
+
+<br>
+
+|     The negative sign bias shows a value of 0.24621319 while the positive sign bias shows a p-value of 0.44888480, which are both greater than 0. The results show no leverage effect. The researchers accept the H0 that there are no significant negative and positive reaction shocks based on the sign bias and negative and positive sign bias.
+
+</span>
+
+**Nyblom stability test**
+
+<br>
+
+|     The Nyblom stability test can detect the structural change in a time series. A structural change implies that the relationship between variables changes over time, such as when the regression y=beta x beta changes. (Logicalerrors, 2017) Ho: The parameter values are constant or stable, i.e. variance = 0. Ha: The parameter values change over time or are not stable, i.e. variance > 0
+
+</span>
+
+<br>
+
+|     Only omega has a stability issue (2.8332 0.47 critical value at 5%) based on the results of the experiment. The ht model's expected variance at a given point in time is represented by the omega parameter.
+
+</span>
+
+**Adjusted Pearson Goodness-of-Fit Test**
+
+<br>
+
+|     Based on results, there is a sign of normality problem but in this study the chosen number of observations is more than 30.therefore it is not a problem.
+
+</span>
+
+
+
+```{r}
+plot(sGARCH1Model, which = "all")
+```
+<br>
+
+|     Series with two conditional SD shows that the returns are stationary. Normal-Q-Q shows that the residuals are not normally distributed, while ACF of standardized residuals shows significant lags on 8. While on square residuals, it shows white noise. The news impact curve shows that the positive and negative are symmetric to one another. Therefore, negative shock news and positive shock news have similar effects on the volatility of all selected stock market returns. Overall, the model is good.
+
+</span>
+
+# sGARCH but using skewed studentized T-test (sstd)
+
+```{r}
+sGARCH2 <- ugarchspec(mean.model = list(armaOrder = c(0,0)),
+                variance.model = list(model = "sGARCH"),
+                distribution.model = 'sstd')
+sGARCH2Model <- ugarchfit(data = StockReturn, spec = sGARCH2)
+coef(sGARCH2Model)
+sGARCH2Model
+```
+
+<br>
+
+|     The ugarchfit() function simultaneously estimates the mean, variance, and distribution of all the parameters. Using a skewed student t-distribution is a good starting point for most cases. Researchers must also estimate the skew (xi) and shape (nu) parameters at this point.
+
+</span>
+
+<br>
+
+|     Similar with sGARCH1Model, Autoregressive and moving average components are not included in sGARCH2Model. There are only a few standard deviations and mean averages to consider. Arma(0,0) *rt = mu (mean) + et* (no ar and ma component). In the end, we've got a model for sGARCH's GARCH model (1,1) An error squared and sigma squared. ARFIMA's Standard Deviation Mean Model (0,0,0)
+
+</span>
+
+
+
+**Model of Variability**
+
+$$y_{t}=\epsilon_{t}\sigma_{t}, \sigma^2_{t} = 0.000008 + \epsilon_{t} + 0.000008\ast\epsilon_{t-1}^2$$
+
+**Model for Return**
+
+
+<br>
+
+$$Model_{Return}: R{t}= Stockreturn_{t}= 0.001751 + \epsilon_{t}$$
+
+</span>
+
+
+**Parameters**
+
+|     In the sGARCH1Model, there are no Autoregressive or Moving Average elements. Only a specific average and a specific set of error terms are employed. Arma(0,0) *rt = mu (mean) + et* (no ar and ma component). Omega is 0.000008, alpha 1 is 0.101943, beta 1 is 0.883181, and the error is 0.000258. These are the parameters. In this scenario, researchers sum up omega, alpha1, and beta1 from the model and don't go over a value of 1. As a result, researchers have concluded that the model is mean-reverting. Skew is at 1.007644 and shape is 4.885375, respectively. It is significant, as evidenced by the parameters.
+
+
+**Skewness** 
+
+<br>
+
+The result shows that the model's skewness is 1.0007644. The distribution is skewed significantly. It implies that the distribution of returns shifts less than the mean. Because of the presence of skewness, the conditional distribution of returns became asymmetric. Negative skewness indicates a higher likelihood of negative returns, while positive skewness indicates the opposite. Because of the importance of skewness, many asymmetric distribution classes were added to the GARCH model.
+
+</span>
+
+
+**Autocorrelation**
+
+
+<br>
+
+|     For Weighted Ljung-Box Test on Standardized Residuals, which tests the auto-correlation. The null hypothesis H0: No serial correlations. At Lag[1] p-value 0.3062, at Lag[2] p-value 0.4296, and Lag[5] p-value of 0.2345 which are all greater than .05 ;therefore, the researchers fail to reject the null hypothesis. Thus the model shows that there are no correlations.
+
+
+</span>
+
+<br>
+
+|     While for Weighted ARCH LM Tests ARCH Lag[3] p-value 0.5155, ARCH Lag[5] p-value 0.4814, and ARCH Lag[7] p-value 0.6746 are all greater than .05; therefore, the researchers also fail to reject the null hypothesis. There is no correlation based on LM Tests.
+
+</span>
+
+**White noise**
+
+<br>
+
+|     Researchers can infer that residuals behave like white noise because there is no serial correlation between them and the squared residuals (stationary)
+
+</span>
+
+**Sign biased test**
+
+
+
+<br>
+
+|     If H0:the additional parameters (dummy variables) are set to 0, the model has been correctly specified.Ha: The additional parameters are != 0 (indicates misspecification of the model).
+
+</span>
+
+<br>
+
+|     The Negative Sign Bias 0.22768723, while Positive Sign Bias 0.28685278, which are both greater than 0. The results show no leverage effect. The researchers accept the H0 that there are no significant negative and positive reaction shocks based on the sign bias and negative and positive sign bias.
+
+</span>
+
+
+**Nyblom stability test**
+
+<br>
+
+|      Ho: The parameter values are constant or stable, i.e. variance = 0. Ha: The parameter values change over time or are not stable, i.e. variance > 0. There is a stability problem between omega, alpha1, beta1 on critical values of 10%, 5%, 1%; therefore, the TGARCH type model is recommended.
+
+</span>
+
+```{r}
+plot(sGARCH2Model, which = "all")
+```
+
+The normal Q-Q plot of sGARCH2Model is better than the previous model since sstd addressed the normality of residuals. For the ACF of standardized residuals it is similar with the previous model there are significant lags on 8 and 18 while squared standardized residuals white noise. The News Impact Curve is the same from the previous models both positive and negative shocks have equal impact. Given the similarity of sGARCH2Model, it is slightly better than sGARCH1Model because of the normality of residuals. 
+
+# GJR-GARCH - Glosten-Jagannathan-Runkle Model
+
+```{r}
+sGARCH3<- ugarchspec(mean.model = list(armaOrder = c(0,0)),
+                variance.model = list(model = "gjrGARCH"),
+                distribution.model = 'sstd')
+sGARCH3Model <- ugarchfit(data = StockReturn, spec = sGARCH3)
+sGARCH3Model
+```
+
+**Parameters** 
+
+<br>
+
+|    The parameters of sGARCH3Model show that  Omega is 0.000011, alpha 1 is 0.041496, and beta 1 is 0.866960. Similar to previous models, the researchers have concluded that the model is mean-reverting since researchers sum up omega, alpha1, and beta1 from the model, and it is not greater than a value of 1. Skew is at 1.002582, and its shape is 5.181025. There is an additional parameter which is gamma1 0.142331. Overall, the parameters are significant. 
+
+</span>
+
+**Autocorrelation**
+
+
+<br>
+
+|     For Weighted Ljung-Box Test on Standardized Residuals, which tests the auto-correlation. The null hypothesis H0: No serial correlations. At Lag[1] p-value 0.1571, at Lag[2] p-value 0.2375, and Lag[5] p-value of 0.1633 which are all greater than .05 ;therefore, the researchers fail to reject the null hypothesis. Thus the model shows that there are no correlations.
+
+
+</span>
+
+<br>
+
+|     While for Weighted ARCH LM Tests ARCH Lag[3] p-value 0.4030, ARCH Lag[5] p-value 0.4400, and ARCH Lag[7] p-value 0.6414 are all greater than .05; therefore, the researchers also fail to reject the null hypothesis. There is no correlation based on LM Tests.
+
+</span>
+
+**White noise**
+
+<br>
+
+|     Similar with the previous models, there is no serial correlation between the standard and squared residuals which shows that residuals behave like white noise.
+
+</span>
+
+**Sign biased test**
+
+
+
+<br>
+
+|     If H0:the additional parameters (dummy variables) are set to 0, the model has been correctly specified.Ha: The additional parameters are != 0 (indicates misspecification of the model).
+
+</span>
+
+<br>
+
+|     The result is similar for sGARCH1Model and sGARCH2Model. Negative sign bias of 0.5774230	and positive sign bias of 0.7366898 which are greater than 0. The results show no leverage effect. The researchers accept the H0 that there are no significant negative and positive reaction shocks based on the sign bias and negative and positive sign bias.
+
+</span>
+
+
+
+```{r}
+plot(sGARCH3Model, which = "all")
+
+out <- newsimpact(sGARCH3Model)
+plot(out$zx, out$zy, xlab = "prediction error", ylab = "predicted variance")
+```
+
+<br>
+
+|    The plots show that sGARCH3Model is similar to the previous model - sGARCH2Model on a normal Q-Q plot. At the same time, the rest of the plots are identical to sGARCH1Model and sGARCH2Model. The only difference is that the news impact curve are asymmetrical compared to the previous models. The steeper angle on the positive curve denotes that volatility tends to respond less to positive news in the GJR-GARCH model.
+
+</span>
+
+# Conclusion
+
+<br>
+
+|    The researchers found that the stock returns tend to be volatile during economic recessions, particularly during the 2008 global financial crisis and the 2020 COVID-19 recession. Investors are understandably concerned about the potential impact of declining stock prices on their holdings when the economy is headed for a recession. As a result, the market is becoming more active. During a recession, income and employment plummet, and stock prices plummet because companies cannot maintain a profit. When stock prices rise after a significant decline, the economy has entered the trough phase of the business cycle.
+
+</span> 
+
+
+<br>
+
+|    This study compares that in the assumption of GARCH mode on Student-t Distribution, the Normal Distribution and GJR-GARCH - Glosten-Jagannathan-Runkle Model based on stock returns of Apple INC from 2007 to 2021 and determine which model is the best. Based on Information Criteria,sGARCH1Model have Akaike of -5.2115 Bayes of -5.2049, Shibata of -5.2115, Hannan-Quinn of -5.2092. sGARCH2Model have Akaike of -5.2942, Bayes of-5.2842, Shibata of -5.2942, Hannan-Quinn of -5.2906. While sGARCH3Model have Akaike of -5.3075, Bayes of -5.2959, Shibata of -5.3075, and Hannan-Quinn of -5.3034. Based on these criteria, sGARCH3Model is the best model since it has the smallest value of criteria compared to sGARCH2Model and sGARCH1Model. 
+
+</span>q
+
+<br>
+
+
+
+|    The inclusion of significant parameter gamma1 made sGARCH3Model better than the previous models. sGARCH2Model is better than sGARCH1Model because of the addition of parameter skew and shape. The skenewss on search but using skewed studentized T-test (sstd) is higher than skewness of GJR-GARCH - Glosten-Jagannathan-Runkle Model. This denotes that Garch with sstd has a higher probability of positive returns than GJG-Garch. The researchers tested three models on their correlation, white noise, parameters and sign biased test. The result shows that all models have passed all these tests. The parameters are significant for all models. There is no correlation for all models. 
+
+</span>
+
+<br>
+
+|    Stock return volatility is a major factor in determining option prices. A significant difference in predicted volatility after the arrival of some major news leads to a significant difference in the current option price. It is evidence in the best model that the volatility is less reactive to positive news than negative news. Interestingly that all models showed that volatility respondes high on negative news. It may also be a factor on the higher volatility on economic slump based on annual stock returns. 
+
+</span>
+
+# References 
+
+
+Engle, R. (1993). Measuring and Testing the Impact of News on Volatility. The Journal of Finance, 48(5), 1749 - 1778.
+Gillespie, P. (2018, January 26). US economy picked up in 2017, but growth slowed at year's end. CNN Business. Retrieved July 7, 2022, from https://money.cnn.com/2018/01/26/news/economy/2017-gdp/index.html
+Logicalerrors. (2017, August 14). GARCH – Modeling Conditional Variance & Useful Diagnostic Tests. logicalerrors. Retrieved July 7, 2022, from https://logicalerrors.wordpress.com/2017/08/14/garch-modeling-conditional-variance-useful-diagnostic-tests/
+Motley Fool Staff. (2016, October 20). How to Calculate Annualized Volatility. The Motley Fool. Retrieved July 7, 2022, from https://www.fool.com/knowledge-center/how-to-calculate-annualized-volatility.aspx
+Smigel, L. (2022, June 24). How Many Trading Days in a Year? Analyzing Alpha. Retrieved July 7, 2022, from https://analyzingalpha.com/how-many-trading-days-in-a-year
+Young, R. (2018, July 27). US economic growth hits fastest rate since 2014. BBC. Retrieved July 7, 2022, from https://www.bbc.com/news/business-44979607

@@ -1,0 +1,694 @@
+---
+title: "Binary logistic regression model in investigating high employee turnover"
+author: "Del Rosario, Allister James"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<style type ="text/css">
+body {
+font-size: 12pt;
+font-family: mono;
+text-align: justify}
+</style>
+
+
+```{r, include=FALSE}
+library(psych) 
+library(pastecs)
+library(olsrr)
+library(skimr)
+library(ggplot2)
+library(dplyr)
+library(PerformanceAnalytics)
+library(jtools)
+library(moments)
+library(descr)
+library(Hmisc)
+library(pscl)
+library(survey)
+library(lmtest)
+library(broom)
+```
+
+
+```{r, echo = FALSE}
+library(readr)
+general_data <- read_csv("general_data.csv", 
+    col_types = cols(Age = col_integer(), 
+        Attrition = col_factor(levels = c("0", 
+            "1")), Education = col_factor(levels = c("1", 
+            "2", "3", "4", "5")), MonthlyIncome = col_integer(), 
+        TotalWorkingYears = col_integer(), 
+        TrainingTimesLastYear = col_integer(), 
+        YearsAtCompany = col_integer(), YearsSinceLastPromotion = col_integer()))
+View(general_data)
+```
+
+
+
+```{r}
+HRData <- general_data %>% 
+	dplyr::select(Attrition,Age,DistanceFromHome,NumCompaniesWorked,TotalWorkingYears,TrainingTimesLastYear,YearsAtCompany,YearsSinceLastPromotion)
+View(HRData)
+```
+
+## Introduction
+
+
+<br>
+
+|      This paper is a Human Resource Analytics Case Study which features the attrition rate of the company at hand. Attrition is generally defined as the gradual loss or diminishing of a thing or item, wherein there are two kinds of attrition namely customer attrition and employee attrition, which is the focus of this paper. Employee attrition is a term that refers to the loss of employees. Employee attrition can be caused by a variety of factors. Employees may leave for a variety of reasons, including retirement, new career prospects, or dissatisfaction with the firm (Corporate Finance Institute, 2021).
+
+</span> 
+
+<br>
+
+|    Attrition rate on the other hand, is ometimes known as the 'churn rate,' is the rate at which employees quit. When you narrow it down, it's the number of people who have departed the company throughout time divided by the average number of employees. It's usually expressed as a percentage (Personio, n.d.).
+
+
+</span> 
+
+<br>
+
+|    The workforce of XYZ, a huge corporation, fluctuates between 4000 and 5000 people at any one moment. However, around 15% of its employees depart the organization each year, necessitating the use of the available labor pool to fill the void. As a result, the company's top executives think that staff attrition (people quitting on their own or because they've been fired) is detrimental to the business.
+
+
+</span> 
+
+<br>
+
+|    The initiatives of ex-employees are pushed back, which hurts the company's image with customers and partners.It is necessary to keep a sizable department in order to attract new employees.The majority of the time, new employees need to be trained and/or given time to become used to their new workplace.
+
+</span>
+
+<br>
+
+|    As a result, management has hired an HR analytics consultancy to determine what areas they should concentrate on in order to reduce turnover. To put it another way, they'd like to know what the firm can do to keep as many of their staff as possible. The company would like to know which of these factors is the most critical and requires immediate attention.
+
+</span>
+
+## Description of the Data 
+
+<br>
+
+|     This study will make use of the dataset: “general_data” from the HR Analytics Case Study. The dataset consists of the reasons behind the attrition reasons for leaving of the employees of Company XYZ.  The dataset contains a total o f 4,411 observations with 24 columns. The dataset originally has 22 independent variables, however, the researchers have decided to utilize only six independent variables.
+
+</span>
+
+<br>
+
+|    Among all the variables provide by the dataset, this study will refer to <span style="color:#9c5957;"> **attrition**</span> as its dependent variable. The dependent variable **attrition** refers to whether an employee has left or remained in the company. With this, by using a Logistic Regression Model, the researchers are expected to determine the factor that has the most influence on the <span style="color:#9c5957;"> **attrition rate** </span> based on the following independent variables: <span style="color:#9c5957;"> **Age** </span>, <span style="color:#9c5957;"> **DistanceFromHome** </span>, <span style="color:#9c5957;"> **NumCompaniesWorked** </span>, <span style="color:#9c5957;"> **TotalWorkingYears** </span>, <span style="color:#9c5957;"> **TrainingTimesLastYear** </span>, <span style="color:#9c5957;">  **YearsAtCompany** </span>, and <span style="color:#9c5957;"> **YearsSiceLastPromotion** </span>.
+
+</span> 
+
+<br> 
+
+## Statement of the Problem and Hypotheses
+
+<br>
+
+|   Employee attrition occurs when a worker quits the organization for whatever reason, such as voluntary resignations, layoffs, failure to return following a leave of absence, illness, or death. According to the case, the management considers that this rate of attrition is detrimental to the company for the following reasons 1) the projects of former employees are delayed, making it impossible to fulfill deadlines and resulting in a loss of reputation among customers and partners, 2) for the objectives of attracting new talent, a large department must be maintained, and  3) lastly, new employees are frequently required to be trained for their jobs and/or given time to adapt to the organization.
+
+</span>
+
+<br>
+
+|   The researchers’ goal in this work is to identify the factors that have the most influence on the attrition rate and examine what changes should the company undergo ir order to get most of the employees to remain in the company. In addition to that, the company wants to determine which of the independent variables is most important and needs urgent attention. In order to complete the logistic regression model, the researchers have set the following hypotheses: 
+
+<br>
+
+($H_0$) **Null hypothesis**: None of the independent variables determines the attrition rate of the company. 
+
+</span>
+
+<br>
+
+($H_a$ or $H_1$) **Alternative hypothesis**: The independent variables Age, DistanceFromHome, NumCompaniesWorked, TotalWorkingYears, TrainingTimesLastYear, YearsAtCompany, YearsSinceLastPromotion have an impact on the attrition rate of the company.
+
+</span>
+
+
+## Objectives of the Study
+
+<br>
+
+|   Through a Logistic Regression Model, the researchers aim to:
+* To identify the null and alternative hypotheses that will be tested;
+* To generate a logistic regression model that will produce credible results by testing the significance of each variable; 
+* To create a visual representation and analysis of the logistic regression model through plots and graphs; 
+* To discover and specify the independent variables that most influence attrition rate in the company;
+* To determine the most significant independent variable that affects the attrition rate of the company;
+* To produce results that will be used by management to determine what adjustments should be made their workplace in order to retain the majority of their personnel.
+
+</span>
+
+
+## DESCRIPTIVE STATS 
+
+<br>
+
+|     The descriptive statistics will be studied one by one in this phase of the study in order to acquire a thorough grasp and analysis of the summary presented. Descriptive statistics are crucial in research studies because they efficiently explain, interpret, and summarize data. As a result, descriptive statistics enhance data visualization by providing fundamental data for the analysis in the dataset. Descriptive statistics, in essence, aid us in presenting data in a more comprehensible manner, making data interpretation easier.  Descriptive statistics are split down into measurements of central tendency and measures of variability (spread) (spread). The mean, median, and mode are measurements of central tendency, while the standard deviation, variance, minimum and maximum variables, kurtosis, and skewness are measures of variability (Logan, 2022).
+
+</span>
+
+```{r}
+psych::describe(HRData)
+Hmisc::describe(HRData)
+skim(HRData)
+pastecs::stat.desc(HRData)
+summary(HRData)
+```
+
+
+## Analysis of Descriptive Statistics
+
+**Mean**
+
+<center>
+
+$$\overline{x} = \frac{Σ}{n}$$
+</center>
+
+
+<br>
+
+|     The average amount is frequently referred to as the mean. It is the average of a dataset's numbers. The mean is a statistical metric that determines the centre location of a random variable's distribution and is frequently used in scientific articles. As a result, determining the average distribution of both the dependent and independent variables in this case requires the use of the mean.
+
+</span>
+
+<br>
+
+|     In this case, the mean of the dependent variable, attrition, is “NaN” or not a number. This is due to the fact that the dataset is contains logistic regression data,  the data comprising the dependent variable do not equate to numbers despite their numerical nature nor value. The data under the attrition column compose of 1 and 0 which are equivalent to yes and no, respectively.  Nonetheless, the group was able to obtain the mean of the independent variables. First is (1) age, with a mean of 36.92 years old, next is the employees’ (2) DistanceFromHome with a mean of 9.19, followed by the (3) NumCompaniesWorked with 2.69, fourth is the (4) TotalWorkingYears with an average of 11.28 years, fifth is (5) TrainingTimesLastYear with 2.80 times, followed by the (6)  YearsAtCompanywith 7.01 years, and lastly, the (7) YearsSinceLastPromotion with a mean of 2.19 years. 
+
+</span>
+
+
+
+**STANDARD DEVIATION**
+
+<center>
+
+$$\sigma = \sqrt{\frac{\sum\limits_{i=1}^{n} \left(x_{i} - \bar{x}\right)^{2}} {n-1}}$$
+</center>
+
+<br> 
+
+|     A standard deviation is a quantitative measure of data dispersion from the mean. When the standard deviation is low, data are grouped around the mean, and when the standard deviation is high, data are spread out. A standard deviation near zero indicates that data points are close to the mean, whereas a high or low standard deviation indicates that data points are above or below the mean (National Library of Medicine, n.d.).
+
+
+</span>
+
+<br>
+
+|     The following standard deviation are as follows: Age has 9.13, DistanceFromHome has 8.11, NumCompaniesWorked has 2.50, TotalWorkingYears has 7.78, TrainingTimesLastYear has 1.29, YearsAtCompany has 6.13, and YearsSinceLastPromotion 3.22. The said data presents that the Age variable has the most spread out datapoints among the variables, and TrainingTimesLastYear has the least spread out datapoints.
+
+</span>
+
+**SKEW**
+
+<center>
+
+$$ \tilde {\mu }_{3} = {\frac{\sum\limits_{i}^{n} \left(X_{i} - \bar{X}\right)^{3}} {(N-1) * \sigma^3 }} $$
+</center>
+
+
+<br> 
+
+|     A successful regression model must additionally take into account the dataset's skewed distribution. Skew shows the extent of variation in the distribution, whether or not it is close to 0. Skewness also provides a glimpse of the dataset's outliers in order to forecast performance (Chen, 2022). 
+
+</span>
+
+<br>
+
+|    Upon observation, it can be deduced that the independent variables in the dataset are not exactly symmetrical since there are no variables that obtained an exact skewness of 0. The independent variable YearsSinceLastPromotion has obtained the highest skewness with 1.98, which means that the data points of this variable are skewed to the right. However, the rest of the variables such as DistanceFromHome with 0.96, NumCompaniesWorked with 1.03, TotalWorkingYears with 1.12, and YearsAtCompany with 1.76 also appear to be skewed to the right due to their positive skewness. However, two of the variables namely Age with 0.41 and TrainingTimesLastYear with 0.55 indicate  a fairly symmetrical distribution since the values are between -0.5 and 0.5. Nonetheless, it can be presumed that the data that obtained are skewed to the right. 
+
+</span>
+
+**KURTOSIS**
+
+<center>
+
+$$ Kurt = \frac{\tilde {\mu }_{4}}{\sigma^4} $$
+</center>
+
+<br>
+
+|     According to the National Standards and Technology, the measure of how heavy-tailed or light-tailed the data are in comparison to a normal distribution is called the Kurtosis. The rules of kurtosis claim that datasets that  have a high kurtosis are more likely to hold heavy tails or outliers. While shorter tails that are common in data sets with low kurtosis represent  a lack of outliers. Lastly, a uniform distribution would be considered an extreme case.
+
+</span>
+
+<br>
+
+|     As can be seen from the statistics, the variable with the highest kurtosis is the YearsAtCompany with 3.91. Next is the YearsSinceLastPromotio with 3.59. These variables have attained values greater than 1, which meas that they  have a peaked distribution. While the rest of the variables, Age, DistanceFromHome, NumCompaniesWorked, TotalWorkingYears, and  TrainingTimesLastYear have obtained kurtoses that are less than 1, allowing them to have a flat distribution. The kurtoses of the aforementioned variables are: -0.41, -0.23, 0.00, 0.91, and 0.49, respectively.
+
+</span>
+
+**Pearson Correlation**
+
+```{r, echo=FALSE}
+psych::pairs.panels(HRData)
+```
+
+<br>
+
+|    Correlation Analysis computes and quantifies the linear connection between the dependent and independent variables in data, assuming that the data is normally distributed or linear. In addition, the Performance Analysis software was utilized to generate a visual depiction of the variable correlation. Each variable's distribution is presented on the diagonal. Furthermore, the correlation value and significance level are depicted as stars at the top of the diagonal, while bivariate scatter plots with a fitted line are depicted at the bottom. Finally, each significance level is allocated a symbol representing its p-values
+
+</span>
+
+
+
+## Model creation using regression and stepwise regression 
+
+**Partition data - Sample function to partition data into 2 - train (80%) & test (20%)**
+
+```{r}
+set.seed(123)
+ind <- sample(2, nrow(HRData), replace = T, prob = c(0.8, 0.2))
+train <- HRData[ind==1,]
+test <- HRData[ind==2,]
+```
+
+<br>
+
+|    A method called data partitioning distributes data over several tables, drives or locations to enhance query performance or boost database manageability. The researchers divide the data into two sets: a training set and a testing set, in order to minimize overfitting. Training and testing sets are used by researchers to determine the model's accuracy. The greatest results may be achieved if we utilize 20% to 30% of the data for testing and the remaining 70% to 80% of the data for training. As a result the test data consist of 3515 observations of 7 variables which is roughly 80 percent of the 4410 observations of data set- HRData. While test consist of 895 observations of 7 variables, a 20 percent of dataset- HRData. 
+
+</span>
+
+**Regresion Model and Stepwise Regression**
+
+$$\textbf {Regression Model Equation} \\y_{i} = ln(p / 1-p) = \beta_{0} + (\beta_{1})^{2}x_{i1} + \beta_{2}x_{i2} + ... + \beta_{N}x_{iN} + \epsilon_{i}$$
+```{r}
+HRModel <- glm(Attrition ~ .,data = test, family = 'binomial')
+summary(HRModel)
+AIC(HRModel)
+BIC(HRModel)
+```
+
+<br>
+
+|    An analysis of multiple regression is being used to determine the relationship between variables and to determine what influence explanatory factors have on the response variable. The first model includes There are six independent (which are the number of bedrooms, bathrooms, and floors, as well as the square footage of the living space , lot size of the houses, and above) variables and one dependent variable (Attrition) in the model . Because of the skewness of the data, the dependent variable price and independent variables sq ft living, sqft above, and sqft lot were all log transformed.
+
+</span>
+
+<br>
+
+|    The Akaike Information Criterion (AIC) and the Bayesian Information Criterion (BIC) are two prominent measures for assessing data quality. The difference between the BIC and the AIC is 33.5543. The lower the AIC and BIC, the better the model captures information. They cannot, however, be regarded seriously on their own. These should instead be used to compare different models.
+
+</span>
+
+<br>
+
+|    The researchers will utilize backward stepwise regression to generate the best model for this study. BACKWARD STEPWISE REGRESSION is a stepwise regression strategy that starts with a total (saturated) model and gradually reduces variables from the regression model at each step to get the best-fitting reduced model. Backward Elimination regression is another name for it. The stepwise technique is crucial because it minimizes the number of predictors, minimizing multicollinearity, and it is one method for resolving to overfit. (Analyst Soft, n.d.)
+
+</span>
+
+<br>
+
+
+|    In this process, the researchers identify the leaving variable- as the least significant predictor to prevent omitted variable bias. The researchers want to generate a model with only relevant explanatory variables included, the coefficient of one or more explanatory variables in the model should not be biased. In this model, the leaving variable is DistanceFromHome, with an absolute z value of 0.841 should be removed from the model. Thus, the researcher creates a new model - HRModel1
+
+</span>
+
+```{r}
+HRModel1 <- glm(Attrition ~ . -DistanceFromHome,data = test, family = 'binomial')
+summary(HRModel1)
+AIC(HRModel)
+AIC(HRModel1)
+```
+
+<br>
+
+|    Before proceeding to the next step, the researchers want to compare if the new model is better than the previous model. This is done through a comparison of the AIC of each model. The previous model, HRModel, has an AIC of 769.2202, while HRModel1 has an AIC of 767.9397, which is lower than the first model; thus, the researchers infer that the new model is better. Proceeding with step two, the researchers identify the leaving variable for HRModel1, TrainingTimesLastYear, since it has the lowest z value of 0.959. 
+
+</span>
+
+```{r}
+HRModel2 <- glm(Attrition ~ . -DistanceFromHome -TrainingTimesLastYear,data = test, family = 'binomial')
+summary(HRModel2)
+AIC(HRModel1)
+AIC(HRModel2)
+```
+<br>
+
+|    Similar to the previous step, the researchers compare the AIC of HRModel1 and HRModel2. HRModel2 AIC of 766.8709 is lower than HRModel1; thus, HRModel2 is better model. After the comparison, the researcher proceeds to the next step. Since all variables are already significant, the researchers would like to test if this model is the best by removing the leaving variable, NumCompaniesWorked. Then compare the AIC of this model and the tested model. 
+
+</span>
+
+```{r}
+HRModelTest <- glm(Attrition ~ . -DistanceFromHome -TrainingTimesLastYear -NumCompaniesWorked,data = test, family = 'binomial')
+summary(HRModel2)
+AIC(HRModel1)
+AIC(HRModel2)
+```
+
+<br>
+
+
+|    The removal of the variable, NumCompaniesWorked increases the AIC of the model.HRModelTest have an AIC of 767.9675 while HRModel2 have AIC of 766.8709. Therefore, The researchers should include it in the model. Indeed the HRModel2 is the best model for this study.
+
+</span>
+
+
+**Discussion of Result**
+
+*Interpretation of Regression Model*
+
+<br>
+
+|    The regression model, ceteris paribus, the researchers have drawn the following inferences: (1) Age = logodds = For every one unit increase in Age, the log odds of employee attrition decreases by 0.03550. (2) NumCompaniesWorked = logodds = For every one unit increase in NumCompaniesWorked , the log odds of employee attrition increases by  0.06748. (3) TotalWorkingYears = logodds = For every one unit increase in TotalWorkingYears, the log odds of employee attrition decreases by 0.04665 (4) YearsAtCompany  = logodds = For every one unit increase in YearsAtCompany, the log odds of employee attrition decreases by 0.08154. (5) YearsSinceLastPromotion = logodds = For every one unit increase in YearsSinceLastPromotion, the log odds of employee attrition increases by 0.10700.The implication of these results will be further discussed in the conclusion part. 
+
+</span>
+
+
+## Regression Diagnostics
+
+</span>
+
+|   The researchers will focus on the logistic regression assumptions; thus, the focus of the diagnostics are the outcome is a binary or dichotomous variable such as yes vs no, positive vs negative, 1 vs 0, there are no influential values (extreme values or outliers) in the continuous predictors, and there are no high intercorrelations (i.e. multicollinearity) among the predictors.(Zach, 2018)
+
+</span>
+
+<br>
+
+|   The researchers will exclude diagnostics on homoscedasticity and error terms since homoscedasticity (constant variance) is necessary in linear regression but not in logistic regression, and error terms (residuals) must be normally distributed in linear regression but not in logistic regression. (Leung, 2021)
+
+</span>
+
+**Diagnostic tests**
+
+<br>
+
+
+|   For hypothesis testing, the researchers will utilize test of significance predictors to determine if the null hypothesis of Null hypothesis (Ho): None of the independent variables determines the attrition rate of the company. If the null hyptohesis is rejected then Alternative hypothesis is accepted. Alternative hypothesis (Ha): The independent variables:Age, DistanceFromHome, NumCompaniesWorked, TotalWorkingYears, TrainingTimesLastYear, YearsAtCompany, YearsSinceLastPromotion have an impact on the attrition rate of the company. However, it is vital to determine if the specific IV's is a predictor of DV- attrition itself. The stepwise regression removes the variable DistanceFromHome and TrainingTimesLastYear since these variables are insignificant. Therefore, the researchers will not include them in the hypothesis testing. 
+
+</span>
+
+*Test of significance of predictors (Age, NumCompaniesWorked, TotalWorkingYears, YearsAtCompany, YearsSinceLastPromotion)*
+
+```{r, echo = TRUE}
+regTermTest(HRModel2,"Age", method ="Wald")
+regTermTest(HRModel2,"NumCompaniesWorked", method ="Wald")
+regTermTest(HRModel2,"TotalWorkingYears", method ="Wald")
+regTermTest(HRModel2,"YearsAtCompany", method ="Wald")
+regTermTest(HRModel2,"YearsSinceLastPromotion", method ="Wald")
+```
+<br>
+
+|   The Wald test (also known as the Wald Chi-Squared Test) determines if explanatory variables in a model are significant. "Significant" variables add something to the model; variables that add nothing can be removed without having any effect on the model. The test may be used to a wide range of models, including those with binary or continuous variables. (StatisticsHowTo, 2016)
+
+</span>
+
+<br>
+|   Independent variables particularly Age, YearsAtCompany, and YearsSinceLastPromotion have p-value of 0.016362, 0.020404, and 0.025587. Therefore, at 95% confidence, the researchers rejected the null hypothesis. Hence, these variables are statistically significant variable of the model. 
+
+</span>
+
+<br>
+
+|   Although the variable NumCompaniesWorked and TotalWorkingYears are statistically insignificant at 95% confidenceWald Test and should accept the null hypothesis since they have p-value of 0.075085 and 0.068912. They are statistically significant at 90% confidence level Wald Test. Therefore, these variables can be accepted in the alternative hypothesis. 
+
+</span>
+
+
+*Anova table of significance*
+```{r, echo = TRUE}
+anova(HRModel2, test="Chisq")
+```
+
+<br>
+
+|   The chi-square test shows that all variables except YearsAtCompany are significant in 95% confidence. It is important to take note that smaller values indicate a better fit as the fitted model deviates less from the saturated model. However, chi-square test is used for comparing categorical variables. Therefore, this test is not fit for the given variables.
+
+
+</span>
+
+
+*Psuedo R-Square*
+```{r, echo = TRUE}
+pR2(HRModel)
+pR2(HRModel1)
+pR2(HRModel2)
+```
+
+<br>
+
+
+|   R-square measures the proportion of variance explained by the model independently in linear regression. In logistics regression, a comparable metric is known as pseudo R-square. The likelihood ratio was the most commonly used such measure: R2 = (Dnull - Dfitted) / Dnull. It is the ratio of the difference in deviation between the null model and the fitted model. The greater the value of this metric, the better the model's explanatory power. Other comparable measurements include the Cox and Snell R-square, the Nagelkerke R-square, the McFadden R-square, and the Tjur R-square. The pscl function pR2 - McFadden's pseudo r-squared, Maximum likelihood pseudo r-squared (Cox & Snell), and Cragg and Uhler's or Nagelkerke's pseudo r-squared all indicate that the model is near to one, which is a favorable sign.
+
+</span>
+
+*Likelihood ratio test*
+
+```{r, echo = TRUE}
+lrtest(HRModel,HRModel1, HRModel2)
+```
+
+<br>
+
+|   The quality of fit of two statistical models is compared using likelihood ratio tests. The LRT analyzes two hierarchically nested models to discover whether increasing complexity to your model (i.e., more parameters) significantly improves its accuracy. (Anderson, 2018)
+
+</span>
+
+<br>
+
+|   The findings demonstrate that the models such as HRModel1 and HRModel2 have p-values greater than 0.05, which is statistically insignificant. In contrast to prior tests, this result indicates that researchers should accept the null hypothesis. HRModel2 has the lowest Pr(>Chisq) of the three models, making it the best of the three.
+
+</span>
+
+*Muticolinearity Test*
+
+```{r, echo = TRUE}
+car::vif(HRModel2)
+```
+
+<br>
+
+
+|   As part of logistic regression assumptions, the researchers would like to diagnose if there are no high intercorrelations (i.e. multicollinearity) among the predictors in the model. Multicollinearity is an important issue in regression analysis and should be fixed by removing the concerned variables. The researchers assesed thisusing the R function vif() [car package]. (Statistical tools for high-throughput data analysis, 2018)
+
+</span>
+
+
+<br>
+
+
+|   Variance inflation factor (VIF) compares the variance of a specific regression coefficient with only that variable in the model to the variance of that same regression coefficient with all variables in the model. A VIF number greater than 5 or 10 implies a high level of collinearity. There is no collinearity based on the results: all variables have VIF values far below 5.
+
+</span>
+
+**Residual Analysis**
+
+<br>
+
+| To broaden our inquiry, the researchers apply four approaches for residual analysis. The residuals are illustrated in four diagnostic plots below: residuals vs fitted, normal Q-Q, scale-location (or spread-location), and residuals versus leverage. Each of these diagnostic plots depicts the residuals in a unique way to assist you in better understanding the data.
+
+</span>
+
+```{r}
+par(mfrow = c(2, 2))
+plot(HRModel2)
+```
+
+*Residual vs Fitted*
+
+
+```{r, echo = TRUE}
+plot(HRModel2, 1)
+arm::binnedplot(fitted(HRModel2), 
+           residuals(HRModel2, type = "response"), 
+           nclass = NULL, 
+           xlab = "Expected Values", 
+           ylab = "Average residual", 
+           main = "Binned residual plot", 
+           cex.pts = 0.8, 
+           col.pts = 1, 
+           col.int = "gray")
+```
+
+<br>
+
+|   As with linear regression, the residuals in logistic regression may be defined as observed minus predicted values. The data and residuals are both discrete. As a result, graphs of logistic regression raw residuals are rarely informative. Instead, after separating the data into groups (bins) based on their fitted values, the binned residuals plot shows the average residual vs the average fitted value for each bin. (Bookdown, n.d.)
+
+</span>
+
+<br>
+
+|   The binned residual plot shows that the points show no pattern, that is, the points are randomly dispersed. Therefore, the researcherscan conclude that the model is an appropriate model.
+
+</span>
+
+
+*Normal Q-Q*
+
+
+```{r, echo = TRUE}
+plot(HRModel2, 2)
+```
+
+<br>
+
+|   A second form of diagnostic tool is the probability plot, which is a graph of the residuals vs the projected order statistics of the standard normal distribution. This graph is also known as a Q-Q Plot since it compares data quantiles to distribution quantiles. Raw, normalized, or jackknifed residuals can be used to construct the Q-Q graphic. The Q-Q plot, also known as the quantile-quantile plot, is a graphical tool used to determine if a collection of data is likely to have come from a theoretical distribution such as a Normal or exponential distribution.  (Ford, 2015)
+
+</span>
+
+<br>
+
+
+|   In our case, it can be observed that both the upper and lower tail residuals have no slope and almost horizontal. The normal probability plot of the residuals should approximately follow a straight line. There points that are away from the line which indicates an outlier. Overall, the result shows that it is normally distributed. 
+
+</span>
+
+*Scale-Location (or Spread-Location)*
+
+```{r, echo = TRUE}
+plot(HRModel2, 3)
+```
+
+<br> 
+
+|  A scale location plot, also known as a spread location plot, displays the components of a regression model on the x-axis and the square root of the standardized residuals on the y-axis. The scale-location plot is similar to the residuals vs fitted plot in appearance, but it simplifies the investigation of the homoskedasticity assumption. (Alex, 2019)
+
+</span>
+
+<br>
+
+|  The spread of magnitudes seems to be lowest in the fitted values close to 0, highest in the fitted values around 20 with three outliers on 30 to 40 which is 769, 259,135. The red line shows a U-pattern and the points are spread equally which denotes that the variance is not equal. Although this is not a concern. Afterall, homoscedasticity is not required required on logistic regression compared to linear regression. 
+
+</span>
+
+
+*Cook's Distance*
+
+```{r, echo = TRUE}
+plot(HRModel2, 4, id.n = 3)
+model.data <- augment(HRModel2) %>% 
+  mutate(index = 1:n()) 
+model.data %>% top_n(3, .cooksd)
+
+ggplot(model.data, aes(index, .std.resid)) + 
+  geom_point(aes(color = Attrition), alpha = .5) +
+  theme_bw()
+```
+
+<br>
+
+|   As mentioned earlier, one of the logistic regression model assumptions is that there is no influential values (extreme values or outliers) in the continuous predictors. Thererfore, the researchers would like to check Cook's Distance to identify the influential values in the model. 
+
+</span>
+
+<br>
+
+
+|   The results shows that the top 3 outliers are 135, 259, and 769. It should be noted that not all outliers are influential observations. The standardized residual error can be examined to see whether the data contains potentially influential observations. Data points with absolute standardized residuals greater than 3 are probable outliers and should be investigated further. The researchers investigates these three outliers through extracting data through augment function on broom package for the top 3 largest values, according to the Cook’s distance,is displayed through plotting of standardized residuals. Based on standardized residuals it can be seen that the outliers is slightly influential observation which challenges the logistic regression model assumptions. The researchers would like to examine these The model can be improved by removing the concerned records, transform the data into log scale, or use non parametric methods. 
+
+</span>
+
+
+*Residuals vs Leverage*
+
+```{r, echo = TRUE}
+plot(HRModel2, 5)
+```
+
+<br>
+
+
+|   The Residuals vs. Leverage graphic can assist us in identifying any influential insights. Outlying values on this plot are often found in the upper right corner or the lower right corner. Those are the areas where data points can have an impact on a regression line. In our case, there are only three observations that are outlier but are not part of the line which indicates that these are not influencial observations. (Alex, 2019)
+
+</span>
+
+
+## Conclusion and Recommendations
+
+<br>
+
+|    Based on the results of the regression model. The following conclusion can be made: (1) As the age of an employee increases, the chances of departure decreases.  Older workers are less likely to leave a firm than a younger worker. Some workers choose to work beyond the retirement age. (2) AS THE NUMBER OF COMPANIES WORKED INCREASES, THE PROBABILITY OF ATTRITION INCREASES since it can be said that an employee with more number of companies worked is either an employee that likes to explore with different companies or have poor performance that resulted in placement of different companies. (3) The more total working years that a specific employee, the more chance that this employee will retain its job position or the company which can be attributed to the fact that the working experience accumulated throughout the years makes the employee comfortable; thus he do not want to leave the company or the employee have gathered experiences and expertise to perform well; thus, the employee performs better and reduces the risk of attrition. (4) YearsAtCompany decreases the chances of attrition since the employee might loved his role to the company and become loyal to the organization (5) If a specific employee is not promoted for a long time, the employee tends to be unsatisfied on its job; therefore, the chance of attrition increases. The lack of promotion opportunity leads them to seek another job. Afterall, how can you be sure whether to stay at your job if you're unsure whether a promotion will ever come? 
+
+</span>
+
+<br>
+
+|    The researchers can test all the logistic regression assumptions. The assumptions on logistic regression are the following: (1) Appropriate outcome type: (2) Absence of multicollinearity, (3) Lack of strongly influential outliers. The outcome variable for this model is Attrition which is  binary classification of with risk of attrition or without risk of attrition. Furthermore, there is no multicollinearity among the variables based on the Variance inflation factor. However, the researchers found out that there are the three outliers in the model are slightly influential observations based on Cook’s distance and plotting of standardized residuals. For the hypothesis testing, the researchers reject the null hypothesis based on the Test of significance of predictors of each IVs, Anova table of significance, and Pseudo R-Square. While accepting the null hypothesis on the Likelihood ratio test. 
+
+</span>
+
+<br>
+
+|    The describe function of the psych package, the describe package under the himsc package, the stat.desc function of the pastecs package, and the skim function under the skimr package were all used to calculate the descriptive statistics. Such functions and packages were essential to the research since they gave a clear representation of the dataset's statistical data. Various descriptive statistics, including the mean, standard deviation, skew, and kurtosis, were generated using these functions.
+
+</span>
+
+<br>
+
+|    It had been found that the mean of the independent variables are as follows: Age has 36.92 years old, DistanceFromHome has 9.19, NumCompaniesWorked has 2.69, TotalWorkingYears has 11.28, TrainingTimesLastYear has 2.80, YearsAtCompany has 7.10, and YearsSinceLastPromotion has 2.19. Furthermore, the standard deviation of the variables were reckoned to be 9.13 for Age , 8.11 for DistanceFromHome, 2.50 for NumCompaniesWorked, 7.78 for TotalWorkingYears, 1.29 for TrainingTimesLastYear, 6.13 for YearsAtCompany,  and 3.22 for YearsSinceLastPromotion. According to the aforementioned data, TrainingTimesLastYear has the least spread out datapoints among the variables, while Age has the most.
+
+</span>
+
+<br>
+
+|    Furthermore, the skewness distribution of the variables have proven to be skewed to the right which also means that the data are not exactly symmetrical. The skewness are as follows: Age has 0.41, DistanceFromHome has 0.96, NumCompaniesWorked has 1.03, TotalWorkingYears has 1.12, TrainingTimesLastYear has 0.55, YearsAtCompany has 1.76, and YearsSinceLastPromotion has 1.98. Lastly, the kurtosis of the data are the following: -0.41 for Age , -0.23 for DistanceFromHome, 0.00  for NumCompaniesWorked, 0.91 for TotalWorkingYears, 0.49 for TrainingTimesLastYear, 3.91 for YearsAtCompany,  and 3.59 for YearsSinceLastPromotion.
+
+</span>
+
+
+<br>
+
+
+|    These are the broad and in-depth perspectives on attrition and retention in the business sector. Both employees and customers are crucial to an organization's goal. Thus, both must be maintained for as long as feasible unless we decide differently. Therefore, it is the responsibility of management to strike a balance and establish a climate in which both staff and consumers find satisfactory service to retain them.
+
+</span>
+
+
+<br>
+
+
+|    In response to the requirement of the case, the group suggests that the company pay attention to the promotion of its employees since this is the factor that the company has full control of. While other factors such as age, number of companies worked, total working years, years of the company, and all significantly affect the attrition rate, the company has the vantage of encouraging its employees to stay loyal to the company by giving them the promotion that is due to them, for the lack thereof would compel the employees to search for another job.
+
+</span>
+
+<br>
+
+
+|    The researchers advise the company to undertake performance evaluations. It is a comparison of individual performance to the organization's total contribution. It functions as a conduit between management and staff. Ultimately, training duration reduces the chance of attrition. An effective performance evaluation will result in an employee who is satisfied, motivated, and dedicated.
+
+</span>
+
+<br>
+
+
+|    The researchers propose that the company should communicate openly with its employees since an effective communication strategy aids in employee retention. It helps employees remain with the company longer. Therefore, longer tenure with the organization reduces the likelihood of leaving.
+
+</span>
+
+## References
+
+Alex. (2019, March 29). The Scale Location Plot: Interpretation in R. Boostedml. Retrieved June 23, 2022, from https://boostedml.com/2019/03/linear-regression-plots-scale-location-plot.html
+Alex. (2019, March 30). Linear Regression Plots: Residuals vs Leverage. Boostedml. Retrieved June 23, 2022, from https://boostedml.com/2019/03/linear-regression-plots-residuals-vs-leverage.html
+Analyst Soft. (n.d.). Backward Stepwise Regression. AnalystSoft. Retrieved June 22, 2022, from https://www.analystsoft.com/en/products/statplus/content/help/pdf/analysis_regression_backward_stepwise_elimination_regression_model.pdf
+Anderson, T. (2018, December 13). Likelihood Ratio Test. RPubs. Retrieved June 22, 2022, from https://api.rpubs.com/tomanderson_34/lrt
+Bookdown. (n.d.). Course Notes for IS 6489, Statistics and Predictive Analytics. Course Notes for IS 6489, Statistics and Predictive Analytics. Retrieved June 23, 2022, from https://bookdown.org/jefftemplewebb/IS-6489/logistic-regression.html#fn40
+Chen, J. (2022, June 15). Skewness Definition. Investopedia. Retrieved June 23, 2022, from https://www.investopedia.com/terms/s/skewness.asp
+Corporate Finance Institute. (2021, September 15). Attrition - Overview, Types, How To Calculate, Importance. Corporate Finance Institute. Retrieved June 21, 2022, from https://corporatefinanceinstitute.com/resources/careers/jobs/attrition-2/
+Ford, C. (2015, August 26). Understanding QQ Plots. University of Virginia Library Research Data Services + Sciences. Retrieved June 23, 2022, from https://data.library.virginia.edu/understanding-q-q-plots/
+Leung, K. (2021, October 4). Assumptions of Logistic Regression, Clearly Explained | by Kenneth Leung. Towards Data Science. Retrieved June 22, 2022, from https://towardsdatascience.com/assumptions-of-logistic-regression-clearly-explained-44d85a22b290
+Logan, M. (2022, March 04). Descriptive Statistics Definition. Investopedia. Retrieved June 22, 2022, from https://www.investopedia.com/terms/d/descriptive_statistics.asp
+National Library of Medicine. (n.d.). Standard Deviation. National Library of Medicine. Retrieved June 23, 2022, from https://www.nlm.nih.gov/nichsr/stats_tutorial/section2/mod8_sd.html
+National Standards and Technology. (n.d.). 1.3.5.11. Measures of Skewness and Kurtosis. Information Technology Laboratory. Retrieved June 23, 2022, from https://www.itl.nist.gov/div898/handbook/eda/section3/eda35b.htm
+Personio. (n.d.). What Is Attrition Rate? | Employee Attrition Rate Meaning. Personio. Retrieved June 21, 2022, from https://www.personio.com/hr-lexicon/attrition-rate/
+Statistical tools for high-throughput data analysis. (2018, November 3). Logistic Regression Assumptions and Diagnostics in R - Articles. STHDA. Retrieved June 23, 2022, from http://www.sthda.com/english/articles/36-classification-methods-essentials/148-logistic-regression-assumptions-and-diagnostics-in-r/
+StatisticsHowTo. (2016, September 19). Wald Test: Definition, Examples, Running the Test. Statistics How To. Retrieved June 22, 2022, from https://www.statisticshowto.com/wald-test/
+Zach. (2018, November 3). Logistic Regression Assumptions and Diagnostics in R - Articles. STHDA. Retrieved June 22, 2022, from http://www.sthda.com/english/articles/36-classification-methods-essentials/148-logistic-regression-assumptions-and-diagnostics-in-r/
+
+
+
+
+
+

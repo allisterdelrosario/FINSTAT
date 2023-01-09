@@ -1,0 +1,669 @@
+---
+title: "Regression Analysis on the factors that affect housing prices in King County"
+author: "Del Rosario, Allister James"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<style type ="text/css">
+body {
+font-size: 12pt;
+font-family: mono;
+text-align: justify}
+</style>
+
+
+```{r, include=FALSE}
+library(psych) 
+library(pastecs)
+library(olsrr)
+library(skimr)
+library(ggplot2)
+library(dplyr)
+library(PerformanceAnalytics)
+library(jtools)
+library(moments)
+library(descr)
+library(Hmisc)
+```
+
+```{r, echo = FALSE}
+library(readxl)
+kc_house_data <- read_excel("kc_house_data.xlsx")
+View(kc_house_data)
+```
+
+
+```{r, echo=FALSE}
+KC_Data <- kc_house_data %>% 
+	select(price, bedrooms, bathrooms, sqft_living, sqft_lot, sqft_above, floors) %>%
+	mutate(price_1 = log(price), sqft_living1 = log(sqft_living), sqft_lot1= log(sqft_lot), sqft_above1=log(sqft_above))
+View(KC_Data)
+
+```
+
+<center> 
+<span style="color: #9c5957"> <p style="font-size:50px;">
+**Regression Analysis on the factors that affect housing prices in King County**
+</span>
+</center>
+
+## Background of the Study
+
+
+
+*Geographic information*
+
+<br>
+
+|      King County, Washington, is a geographically diversified county that includes large metropolitan centers along Puget Sound's shores, wealthy suburbs east of Lake Washington, rural settlements in agricultural river valleys to the southeast, and distant towns in the Cascade Mountains' foothills. Like many other American cities, Seattle and its neighboring regions have seen remarkable growth in the decades since World War II. (King County, Washington Population 2022, n.d.)
+
+</span> 
+
+<br>
+
+|     The county has a total area of 2,307 square miles, according to the Census Bureau. By area, it is Washington's 11th largest county. It covers 2,126 square miles of land and 180 square miles of water. Water covers 7.82% of the entire area. (King County Sheriff's Office, n.d.)
+
+</span> 
+
+<br>
+
+
+*Population*
+
+|     Being a large county, its estimated population is 2,326,040 in 2022 with a growth rate of 1.06% in the past year. (King County, Washington Population 2022, n.d.)
+
+</span>
+
+*Economy (education/employment rate)*
+
+<br>
+
+|     Economics-wise, King County is known for being one of the most educated areas in the country, with 53.2% of residents aged 25 and up having a bachelor's degree or above in 2018. Since it has been proven that wages and educational attainment are strongly linked (Educational Attainment in King County, 2017) , workers with a bachelor's degree may earn nearly twice as much as someone with only a high school education in King County. This is why King County is home to a number of significant, well-known firms, hence presenting great job opportunities to its residents (Employment Trends in King County, 2016). 
+
+</span> 
+
+
+ 
+
+
+## Description of the Data 
+
+<br>
+
+|     This study will make use of the dataset: “House Sales in King County, USA”. The dataset consists of the common factors that affected the price of the houses sold in King County between May 2014 and May 2015. The dataset contains 21,614 observations with 21 columns.
+
+</span>
+
+<br>
+
+|     Among all the variables provide by the dataset, this study will refer to <span style="color:#9c5957;"> **price** </span> as its dependent variable. With this, by using a Multiple Regression Model, the researchers are expected to predict the <span style="color:#9c5957;"> **price** </span> based on the following independent variables: 
+<span style="color:#9c5957;"> **Bedroom** </span>, <span style="color:#9c5957;"> **bathroom** </span>, <span style="color:#9c5957;"> **sqft_lot** </span>, <span style="color:#9c5957;"> **floors** </span>, <span style="color:#9c5957;"> **sqft_living** </span>, <span style="color:#9c5957;">  **sqft_above** </span>.
+
+
+<br>
+
+|     The dependent variable “price” refers to the price of each household sold. 
+* Bedroom is the number of bedrooms in the house; 
+* Bathroom is the number of bathrooms in the house;
+* Floors is the total floors of the property;
+* Sqft_lot is the total lot area of the property;
+* Sqft_living is the total floor area of the property;
+* Sqft_above is the floor area of the 2nd floor and above of the property. 
+
+
+</span>
+
+ 
+
+## Objective of the study
+
+<br> 
+
+|     The researchers' goal in this work is to examine the figures from the given information and offer a tabular and graphical visualization of house prices in King County. This study will be focusing on the “price” as the dependent variable in relation to the factors namely: bedrooms, bathrooms, sqft_lot, sqft_living, sqft_abouve, and floors which are deemed as independent variables. Through a Multiple Linear Regression model, the researchers aim to: 
+* To identify the null and alternative hypotheses that will be tested;
+* To generate a regression model that will produce credible results by testing the significance of each variable; 
+* To create a visual representation and analysis of the regression model through plots and graphs; 
+* To discover and specify the independent variables that most influence the price of houses in the aforementioned area;
+* To determine the most significant IV that affects the housing prices in King Country, USA;
+* To determine the average price of houses sold in King County.
+
+</span>
+ 
+## DESCRIPTIVE STATS 
+
+<br>
+
+|     In this section of the study, the descriptive statistics will be examined one by one in order to gain a comprehensive understanding and analysis of the presented summary. Descriptive statistics is an important aspect of a research study since it effectively describes, interprets, and summarizes the data.  As a result, descriptive statistics aid in data visualization by providing basic information on the variables in the focused dataset. Essentially, descriptive statistics help us to present data in a more meaningful fashion, making data interpretation easier.
+
+</span>
+
+```{r, results='hide', echo=FALSE}
+psych::describe(KC_Data)
+Hmisc::describe(KC_Data)
+skim(KC_Data)
+pastecs::stat.desc(KC_Data)
+summary(KC_Data)
+```
+
+  
+
+
+## Analysis of Descriptive Statistics
+
+## Mean
+
+<center>
+$$\overline{x} = \frac{Σ}{n}$$
+</center>
+
+
+<br>
+
+|     The mean is often called the average amount. It is the average of the numbers of a dataset.  Mean is a statistical metric that measures the central location of a random variable's distribution and is often mentioned in the scientific literature. As a result, the mean is crucial in estimating the average distribution of both the dependent and independent variables in this situation.
+
+</span>
+
+<br>
+
+|     The prices in the price column are in US dollars. It has an average of 540,088.  This means that, the average price of properties sold in King County is the previously specified figure. The average price is high due to the considerable difference between the least and maximum prices of the residences, which are 75,000 and 7,700,000, respectively. Due to the prices of the properties ranging into thousands of dollars, the group has chosen to utilize the log function to limit it to the ones of places only. Therefore, the total adjusted price mean is 13.05. The minimum price of the property is 11.23, and the maximum price of the property is 15.86.
+
+</span>
+
+<br>
+
+
+|     Following that, each property has an average of 3 bedrooms. According to the data, the minimum number of bedrooms is 0 while the maximum is 33. As for the average number of bathrooms for the properties sold in King County is 2, with a min of 0 and a maximum of 8. 
+
+</span>
+
+<br>
+
+|     On the other hand, the results show a mean of 2,079 square foot living. This reflects the average size of the actual living space or floor space in the houses in King County in square feet. The maximum square footage is 13,540 square feet. While the minimum living space is measured at 290 square feet. In relation to this, the results display a mean of 15,106.97, representing the average size of lots sold in King County, while the smallest lot sold was 520 square feet and the largest lot sold 16,511,359 square feet. 
+
+</span>
+
+<br>
+
+|     Next is the  sqft_above, which according to the data, has minimum square footage sold was 290 square feet while the maximum or the largest size measures 9,410 square feet.  And with this, the average above is 1,788.39 square feet. Since the lot size is in the thousands, the group has chosen to also employ the log function to limit it to the tens place only. 
+
+</span>
+
+<br>
+
+
+|     As a result, the adjusted sqft_living1 mean is 7.55. According to the corrected values, the houses have a minimum living lot of 5.67 and a maximum living lot of 9.51. As for the sqft_lot1, it has a mean of 8.99, a minimum lot size of 6.25, and a maximum lot size of 14.32.
+
+</span>
+
+<br>
+
+|     Following is the sqft_above1 with an adjusted mean of 7.39, minimum square feet of 5.67 and maximum of 9.15 square feet. Finally, the average number of floors is 7, with the number of floors determined by the aforementioned elements such as the number of bedrooms and sqft lot. The data also shows that the least number of floors in King County houses is 1, while the most number of floors is 3.5.
+
+</span>
+
+## STANDARD DEVIATION
+
+<center>
+$$\sigma = \sqrt{\frac{\sum\limits_{i=1}^{n} \left(x_{i} - \bar{x}\right)^{2}} {n-1}}$$
+</center>
+
+<br> 
+
+|     A standard deviation (or ) is a measure of data dispersion in proportion to the mean. Data are clustered around the mean when the standard deviation is low, and data are spread out when the standard deviation is high. A standard deviation near 0 suggests that data points are close to the mean, while a high or low standard deviation indicates that data points are above or below the mean, respectively (National Institutes of Health,  n.d.) 
+
+</span>
+
+<br>
+
+|     The standard deviation of price1 is 0.53, 0.93 for bedrooms, 0.77 for bathrooms, 0.42 for sqft_living1, 0.9 for sqft_lot1, 0.43 for sqft_above1, and 0.54 for floors. It shows that the standard deviations of the descriptive data are all less than 1. Therefore, it can be concluded that all the values chosen are close to the mean. 
+
+</span>
+
+## SKEW
+
+<center>
+$$ \tilde {\mu }_{3} = {\frac{\sum\limits_{i}^{n} \left(X_{i} - \bar{X}\right)^{3}} {(N-1) * \sigma^3 }} $$
+</center>
+
+
+<br> 
+
+
+|     Skew shows the extent of variation in the distribution, whether or not it is close to 0. In order to develop a good regression model, it is also necessary to determine the dataset's skewed distribution. Furthermore, skewness can be used to predict performance because it provides a glimpse of the dataset's outliers. 
+
+</span>
+
+<br>
+
+|     Looking at the data, it is evident that there is no exact 0 skew value, indicating that the variables in the dataset are not entirely symmetrical. The bedrooms variable yields the highest result of 1.97. This means that the data points for this variable are skewed to the right. The bathrooms, sqft_lot1, and floors variables are also somewhat skewed to the right. However, because price1 and sqft_above1 are less than 0.5, it is relatively symmetrically distributed. Although the sqft_living1 has a negative value for its skew of -0.04, It still appears to have a reasonably symmetric distribution. Because all variables except sqft_living1 have positive values, it is possible to deduce that the data obtained is skewed to the right. However, because sqft_living1 has a negative value, we can assume that it is skewed to the left.
+
+</span>
+
+## KURTOSIS
+
+<center>
+$$ Kurt = \frac{\tilde {\mu }_{4}}{\sigma^4} $$
+</center>
+
+<br>
+
+|     Kurtosis is a measure of how heavy-tailed or light-tailed the data are in comparison to a normal distribution. Data sets having a high kurtosis are more likely to contain heavy tails or outliers. Short tails or a lack of outliers are common in data sets with low kurtosis. The most extreme instance would be a uniform distribution (National Institute of Standards and Technology, n.d.).
+
+</span>
+
+<br>
+
+|     As presented in the data, the variable that has the highest kurtosis is the bedrooms with 49.05 kurtoses. Next is the sqft_lot1 variable with 3.32 kurtosis, and last is the bathrooms variable with 1.28 kurtosis. All three variables appear to have a peaked distribution as all have obtained values higher than 1. On the other hand, price1, sqft_living1, sqft_above1, and floor appear to have a flat distribution due to their respective kurtoses that are less than 1. These kurtoses include 0.69, -0.06, -0.32, and -0.49 respectively. 
+
+ 
+</span>
+
+## Pearson Correlation Matrix 
+
+
+```{r}
+psych::pairs.panels(KC_Data)
+PerformanceAnalytics::chart.Correlation(KC_Data[,-c(1, 4, 5)],
+histogram = TRUE, method = "pearson")
+```
+<br>
+
+The Pearson Correlation Analysis calculates and quantifies the linear relationship between the dependent and independent variables in the data, given the assumption that the data are normally distributed or linear. Alongside this, the  Performance Analysis package was also used to obtain a visual representation of the correlation between the variables. Each variable's distribution is presented on the diagonal. Furthermore, the value of the correlation as well as the significance level are shown as stars at the top of the diagonal, while bivariate scatter plots with a fitted line are shown at the bottom of the diagonal. Ultimately, each significance level is assigned a symbol that corresponds to its p-values.
+
+</span>
+
+<br>
+
+
+The plots display both linear which means that one variable grows at nearly the same rate as the other variables change by one unit.  and curvilinear formations which means that one variable does not increase at a consistent rate, and after a certain point, it may even begin to decrease (Mindrila & Balentyne, n.d.). 
+
+
+</span>
+
+<br>
+
+
+
+</span>
+
+
+
+## Regression Model
+
+<center>
+
+$$
+{Log(price1) = \beta_{0} + \beta_{1} \times log(sqft_living1) + \beta_{2} \times log(sqft_lot1) + \beta_{3} \times log(sqft_above1) + \beta_{4} \times bedrooms + \beta_{5} \times bathrooms + \beta_{6} \times floors + E_{i}}
+$$
+
+</center>
+
+```{r}
+Regression1 <- lm(price_1 ~ sqft_living1 + sqft_lot1 + sqft_above1 + bathrooms + bedrooms + floors, data = KC_Data)
+summary(Regression1)
+
+```
+
+
+$$ price_1{i}=6.831348+0.916951 * sqft_living1{i} - 0.041824 * sqft_lot1{i} - 0.029231 * sqft_above {i} + 0.044663 * bathrooms{i} - 0.072612 * bedrooms{i} + 0.023840 * floors{i} + \epsilon_{i} $$
+
+
+<br>
+
+
+|    An analysis of multiple regression is being used to determine the relationship between variables and to determine what influence explanatory factors have on the response variable. There are six independent (which are the number of bedrooms, bathrooms, and floors, as well as the square footage of the living space , lot size of the houses, and above) variables and one dependent variable (price) in the model . Because of the skewness of the data, the dependent variable price and independent variables sq ft living, sqft above, and sqft lot were all log transformed.
+
+</span>
+
+
+## STEPWISE REGRESSION
+
+
+```{r, echo = FALSE}
+AIC(Regression1)
+BIC(Regression1)
+```
+
+<br>
+
+|    With regard to criteria used to assess the quality of data, the Akaike Information Criterion (AIC) and the Bayesian Information Criterion (BIC) are two popular options. There is a difference of 19,777.75 between the BIC and the AIC. The smaller the AIC and BIC are, the better the model is in capturing information. They can't be taken significantly on their own, though. Instead, these should be used to compare different models.
+
+</span>
+
+
+Method 1.1: **Forward regression using AIC** 
+
+```{r}
+Regression1 <- lm(price_1 ~ sqft_living1 + sqft_lot1 + sqft_above1 + bathrooms + bedrooms + floors, data = KC_Data)
+FWDfit.aic<-ols_step_forward_aic(Regression1, details = TRUE)
+FWDfit.aic
+```
+```{r}
+plot(FWDfit.aic)
+```
+
+<br>
+
+|   Forward regression using AIC focuses on AIC as the basis for adding significant variables. This regression model will use six candidate variables: the sqft_living1, sqft_lot1, sqft_above1,  bedrooms, bathrooms, and floors. Based on Step 0, when the DV price_1 is added to the model, it results in an AIC of 33623.53 while adjusted R of 0.455, 0.344, 0.303, 0.118, 0.096, 0.019, respectively. After that, we can see that sqft_living1 has the lowest AIC value of 20486 and adjusted R of 0.455, 0.344, 0.303, 0.118, 0.096, and 0.019. Its AIC is significantly lower than the step 0 AIC basis; therefore, it will be added to the model as step 1. As for the 2nd step, when the bedrooms is added in the model, it results in an AIC of 20,117.94 while adjusted R of 0.472, 0.469, 0.468, and 0.465, respectively. For Step 3, the sqft_lot1 variable will now be added because it has an AIC = 19,804.9, which is lower than the previous value when bedrooms are added to the model. Then, in step 4, when the bathrooms are added in the model, it results in an AIC of 19720.78 while adjusted R of 0.475 and 0.474. As for step 5, floors will be added to the model, which will result in an AIC of 19715.77 and an adjusted R of 0.475. It is also worth noting that each additional variable resulted in the lowest AIC and highest adjusted R-squared. This signifies that the predictors included are statistically significant, which means that a good regression model was built that has the least amount of information loss and a high percentage of independent variables that can explain the variation of the dependent variable, respectively. There is a strong case for including all six of these independent variables in a regression model because they can reliably forecast the house price.
+
+</span>
+
+
+## Method 1.2: **Backward regression using AIC**
+
+```{r}
+BWDfit.aic<-ols_step_backward_aic(Regression1, details= TRUE)
+BWDfit.aic
+```
+
+
+```{r}
+plot(BWDfit.aic)
+```
+
+<br>
+
+|   A strategy known as "BACKWARD STEPWISE REGRESSION" employs a step-by-step elimination of variables from the regression model to arrive at a simplified model that best describes the data. It also shows the variables removed based on the ascending order of AIC and descending order of adjusted R-squared. However, upon utilization of backward stepwise regression resulted in "No variables have been removed from the model." This states that the model is already suitable for the explanation of the data. The plot shows that the model has an AIC value of 19713.9. No further steps are made since there is no need for the removal of independent variables. The regression model should include all independent variables since it provides a low prediction error. 
+
+
+
+</span>
+
+## Method 1.3: **Stepwise AIC both direction selection**
+
+
+```{r}
+Bothfit.aic<-ols_step_both_aic(Regression1, details = TRUE)
+Bothfit.aic
+```
+
+```{r}
+plot(Bothfit.aic)
+```
+
+<br>
+
+
+|   Stepwise AIC both direction selection focuses on lowest AIC and Adjusted r-square as the basis for adding new, as well as removing potential explanatory variables. This regression model will use six candidate variables: the sqft_living1, sqft_lot1, sqft_above1,  bedrooms, bathrooms, and floors. Based on Step 0, when the dependent variable price_1 is added to the model, it results in an AIC of 33623.53 with an adjusted R of 0.455, 0.344, 0.303, 0.118, 0.096, 0.019 respectively. After that, we can see that sqft_living1 has been added in step 2 since it has the lowest AIC value. It resulted to 20486.98 and adjusted R of 0.465, 0.463, 0.460, 0.459 and 0.455. Its AIC is significantly lower than the step 0 AIC basis; therefore, it will be added to the model as step 1. As for the 2nd step, when the bedrooms is added in the model, it results in an AIC of 20,117.94 with an adjusted r of 0.472, 0.469, 0.468, and 0.465 respectively. For Step 3, the sqft_lot1 variable will now be added because it has an AIC = 19,804.9, which is lower than the previous value when bedrooms are added to the model. Its adjusted r-square is as follows; 0.475, 0.473 and 0.472. Then, in step 4, when the bathrooms are added in the model, it results in an AIC of 19720.78 while adjusted R of 0.475 and 0.474. As for step 5, floors will be added to the model, which will result in an AIC of 19715.77 and an adjusted R of 0.475. Lastly for step 6, sqft_above1 is added with a total AIC of 19713.9. It can be noted that all independent variables are significant in the model. therefore, stepwise AIC both direction selection did not remove any IVs in the model. 
+
+</span>
+
+
+```{r}
+Regression_Compare<-ols_step_best_subset(Regression1)
+Regression_Compare
+```
+
+<br>
+
+Similar with to the previous models through stepwise forward, backward and both, the best model is as follows; price_1 ~ sqft_living1 + sqft_lot1 + sqft_above1 + bathrooms + bedrooms + floors.
+
+</span>
+
+
+## Discussion of Results 
+
+```{r}
+Regression2 <- lm(price_1 ~ sqft_living1 + sqft_lot1 + sqft_above1 + bathrooms + bedrooms + floors, data= KC_Data)
+summary(Regression2)
+```
+
+<br>
+
+The results of the multiple regression output and analysis revealed that theadjusted R-squared were equal to  47.47 percent. This means that the independent variables bedrooms, bathrooms, sqft living, sqft lot, and floors may explain 47.47 percent of the price fluctuation, which is the dependent variable. It also revealed a residual standard error of 0.3817 and an f-statistic of 3,3257 on degrees of freedom 6 and 21,606, respectively, which are degrees of freedom 1 and 2.
+
+
+<br>
+
+The null hypothesis for the overall goodness of fit of the model was:
+$$H_0: \beta_0 = \beta_1 = \beta_2 = \beta_3 = \beta_4 = \beta_5 = 0$$
+
+</span>
+
+<br>
+where b0 represents the intercept and b1-5 represent the independent variables According to the findings, the null hypothesis should be rejected because the p-value is less than the significance threshold of.05. As a result, there is statistical evidence that at least one of these variables is not equal to zero. Similarly, after doing the individual test of significance and obtaining each of their confidence intervals, it was determined that all 5 predictors were significant at the.05 significance level and that 0 did not sit between their upper and lower interval values. These are significant indicators because they show that all independent factors influence the dependent variable, which is the property sale price.
+
+
+<br>
+
+
+
+|    The regression model, ceteris paribus, provides the following interpretations for each variables: (1) For every 1 unit square feet of living, there is a corresponding increase in 0.916954  in housing price. (2) For every 1 unit square feet of lot, there is a corresponding decrease in 0.041824  in housing price. (3) For every 1 unit square feet of above, there is a corresponding decrease in 0.029231  in housing price. (4) For every 1 unit bathroom, there is a corresponding increase in 0.044663  in housing price. (5) For every 1 unit bedrooms, there is a corresponding decrease in 0.072612 in housing price. (6) For every 1 unit square feet of above, there is a corresponding increase 0.023840 in housing price. 
+
+</span>
+
+
+## Regression Diagnostics
+
+<br>
+
+After the creation of model. THe researchers would like to assess the Assumptions for the Model.The following are the model assumptions for multiple linear regresison
+
+</span>
+
+<br>
+
+
+*Linearity*: A linear relationship exists between X and the mean of Y.
+The variables should be linear.
+*Homoscedasticity*: The residual variance is the same for every value of X.
+*Independence*: Observations are distinct from one another.
+*Normality*: Y is regularly distributed for any fixed value of X.
+
+</span>
+
+<br>
+
+*Homoscedasticity: Breusch-Pagan test and Non-constance error variance test*
+
+<br>
+
+H0: The regression model is homoskedastic
+Ha: The regression model is heteroskedastic
+
+</span>
+
+
+```{r}
+lmtest::bptest(Regression2)
+car::ncvTest(Regression2)
+```
+
+<br>
+
+|    Since the result of ncvTest p-value of 0.0013931 and Breush-Pagan test p-value < 2.2e-16 is lower than p-value of 0.05. The researchers reject the null hypothesis. Therefore, the model is heteroskedastic. The researchers suggest to run the regression with robust standard errors. Other assumptions such as Multicolinearity  will be discussed in residual analysis Residual vs fitted, while normality wil lbe discussed in residual analysis normal Q-Q. Independence will be discussed in residual analysis residual vs leverage. 
+
+</span>
+
+## Residual Analysis
+
+
+
+```{r}
+par(mfrow = c(2, 2))
+plot(Regression2)
+```
+
+<br>
+
+|    The plots have an unattractive and appears to be insignificant.Four methods are used to do residual analysis in order to widen our investigation. There are four diagnostic plots below that illustrate residuals: residuals versus fitted, normal Q-Q, scale-location (or spread-location), and residuals versus leverage. Each of these diagnostic plots shows the residuals in a different way to help you better understand the data.
+
+</span>
+
+## Residuals vs Fitted
+
+```{r, echo = TRUE}
+plot(Regression2, 1)
+```
+
+<br>
+
+
+
+|    Checking for linearity and homoscedasticity can be done by looking at the residuals versus the anticipated values on a graph. We can expect extremely large residuals if the model fails to conform to the linear model assumption - multicolinearity (big positive value greater than 2 or big negative value less than -2). We want to make sure that the residuals aren't too far from 0 before evaluating the linearity assumption. There should be no discernible pattern in the residuals and an equal distribution around the y=0 line to determine if the homoscedasticity assumption has been met. (Boston University School of Public Health, 2016)
+
+
+</span>
+
+<br>
+
+|    When a residual plot shows a rough "U"-shaped link (either direct or inverted) between the residuals and an explanatory variable, the fit of the model to the data can be improved by introducing the square of that explanatory variable as a new artificial variable in the model. (Kellog, n.d.)
+
+</span>
+
+<br>
+
+|    In our case, it is evident that there is a U shape link between the residuals; therefore, there are presence of non-linear variables in the model. As a result, this residual plot demonstrates a non-linear relationship in the data that undermines the linearity assumption of the regression model. In addition, this is because the variables in the data are so large. Furthermore, the red line exhibits a U-shape pattern, which suggests that a linear model is not  for the data.
+
+</span>
+
+<br>
+
+|    This tells us that there is a discernible non-linear trend to the residuals. Furthermore, the residuals appear to be clustered in the middle of the entire range of fitted values. Furthermore, it appears that there is an indication of non-constant variance.
+
+</span>
+
+
+
+## Normal Q-Q 
+
+
+```{r, echo = TRUE}
+plot(Regression2, 2)
+```
+
+<br>
+
+
+|    The probability plot, a graph of the residuals vs the predicted order statistics of the standard normal distribution, is a second type of diagnostic tool. This graph is also known as a Q-Q Plot, as it compares the quantiles of the data to those of a distribution. The Q-Q plot may be generated using raw, standardized, or jackknifed residuals.  (Rodriguez, 2021)
+
+</span>
+
+<br>
+
+|    The Q-Q plot, or quantile-quantile plot, is a graphical tool to help us assess if a set of data plausibly came from some theoretical distribution such as a Normal or exponential (Ford, 2015)  
+
+</span>
+
+<br>
+
+|    Q-Q(quantile-quantile) is used to graphically analyze and compare two probability distributions by plotting their quantiles against each other. If the two distributions are exactly equal, then the points on the Q-Q plot will perfectly lie on a straight line y = x.
+
+</span>
+
+<br>
+
+
+|    In our case, it can be observed that both the upper and lower tail residuals diverge from the diagonal line. This indicates that the observed values for the plot's tails exceed the conventional assumptions. This is further demonstrated by the fact that the line formed by the points is steeper than the diagonal line with dots. With this information, it can be concluded that the Q-Q plot slightly broke the linearity assumption due to the heavy tails, but supported the constant variance or homoscedasticity assumption due to the dispersion of the plots or residuals around zero. Consequently, the distribution can be assumed to be **normal**.
+
+</span>
+
+
+## Scale-Location (or Spread-Location)
+
+```{r, echo = TRUE}
+plot(Regression2, 3)
+```
+
+<br> 
+
+
+|    Scale location plot, also known as spread location plots, show the components of a regression model along the x-axis and the square root of the standardized residuals along the y-axis The scale-location plot is similar to the residuals vs fitted plot, but it simplifies the study of the homoskedasticity assumption (Rodriguez, 2021) 
+
+</span>
+
+<br>
+
+
+
+|    The scale location plot indicates non-linearity in this case, but we can also see that the spread of magnitudes appears to be smallest in the fitted values close to zero, greatest in the fitted values near thirteen, and average at fourteen. Therefore, it shows that the residuals have non-constant variance problem rather than heteroscedastic problem Although the red trend line is considerably bent, it remains horizontal. Consequently, the obtained curves indicating "errors" nevertheless result in a plot with non-constant variance.
+
+</span>
+
+
+
+## Cook's Distance
+
+```{r, echo = TRUE}
+plot(Regression2, 4)
+```
+
+## Residuals vs Leverage
+
+```{r, echo = TRUE}
+plot(Regression2, 5)
+```
+
+<br>
+
+|    In general, the extreme values are found in the upper or lower right corner. These are the locations where data points can have influence over a regression line. Because the data are scaled to display a vast area, the majority of residuals appear to be clustered on the left in this instance. There is no evident high leveraged in this model rather than observation <span style="color:#9c5957;"> **15,871** </span> . With high leverage observation- 15,871 may be influential: that is, deleting this observation would change the model a lot. For this we can look at Cook’s distance, which measures the effect of deleting a point on the combined parameter vector. Cook’s distance is the dotted red line here, and points outside the dotted line have high influence. 
+
+</span>
+
+
+ 
+
+## Conclusion and Recommendations
+
+<br>
+
+|    To adequately analyze the relationship between the dependent variable and independent variables, including the determination of the independent variable that made the most impact on the pricing of houses within King County, USA, the researchers made use of Multiple Linear Regression. Respectively, the dependent variable was price, while the original independent variables were bedrooms, bathrooms, floors, sqft_lot, sqft_living, sqft_above.  Such independent variables were subject to adjustments, specifically log transformation. 
+
+</span>
+
+<br>
+
+
+|    Various packages were utilized to determine the descriptive statistics, specifically, the describe function of psych package, describe package under himsc package, stat.desc of pastecs package, and skim under the skimr package. Such functions and packages served vital to the paper as they provided a clear depiction of the statistical information of the dataset. These fucntions produced various descriptive statistics such as the mean, min, max, standard deviation, skew, and kurtosis. With the information given, it was discovered that houses on King County, USA have an  average sale price of $540,088.14. In addition, houses in that are have an average of 3 bedrooms, 2 bathrooms, 7 floors, 2,079 square feet living space, 15,106.97 square feet lot, and 1,788.39 square feet above. However, since 2 of 6 variables were transformed into log, this resulted in the following average values: 7.55 square feet living space, and 8.99 square feet lot area. The dependent variable, price, was also transformed into log or price1 which resulted in mean of 13.05. Moreover, the standard deviation were reckoned to be 0.53 for price1, 0.77 for bathrooms, 0.42 for sqft_living1, 0.9 for sqft_lot1, 0.43 for sqft_above1, and 0.54 for floors. It reveals that the descriptive data's standard deviations are all smaller than one. As a result, it's safe to say that all of the values selected are close to the mean. 
+
+</span>
+
+<br>
+
+
+|    In line with the Skewness of the variables, the absence of an absolute 0 skew value in the data indicates that the variables in the dataset are not perfectly symmetrical. With a score of 1.97, the bedrooms variable is the most important. This indicates that this variable's data points are skewed to the right. The variables bathrooms, sqft_lot1, and floors are also biased to the right. However, it is symmetrically distributed because price1 and sqft above1 are less than 0.5. Despite the fact that the sqft_iving1 has a negative skew of -0.04, it looks to have a fairly symmetric distribution. Because all variables but sqft_living1 have positive values, the data produced can be assumed to be skewed to the right. We can suppose that sqft_living1 is skewed to the left because it has a negative value. Lastly, the kurtosis of the variables are as follows: price1 has 0.69, bedrooms has 49.05, bathrooms has 1.28, sqft_lot1 has 3.32, sqft_living1has -0.06, sqft_above1 has -0.32, and floor has -0.49. 
+
+</span>
+
+
+<br>
+
+
+|    Our p-value showed a data of less than 2.2e-16. A p-value of less than 0.05 (typically ≤ 0.05) indicates that it is statistically significant. It indicates strong evidence against the null hypothesis This would lead us to reject the null hypothesis and conclude that there is strong evidence that a relationship does exist between our dependent variable (county housing prices) and our independent variable (sqft_living1, sqft_lot1, sqft_above1,  bedrooms, bathrooms, floors).  There is a 47.47 percent correlation between price and the independent variables, which include, sqft_living1, sqft_lot1, sqft_above1, bedrooms, bathrooms, and floors based on multiple regression output and analysis. While, on degrees of freedom 6 and 21,606, it showed a residual standard error of 0.3817 as well as an f-statistic of 3,257. 
+
+</span>
+
+<br>
+
+
+|    In the selection of Independent Variables through Stepwise Regression, the forward stepwise regression demonstrated that using AIC is proof that all independent variables should be included in the regression model because these six (6) predictors significantly forecast the house price. This will result in a model with strong predictive ability for the dependent variable, house price. In relation to this, stepwise regression in reverse was also performed. However, this procedure revealed that no variables will be eliminated from the regression model. This implies that all predictors observed in the forward stepwise regression must be included in the model. Thus, no predictors will be eliminated or excluded from the regression model because it is believed that having all independent variables provides the best model fit to the data and the lowest prediction error.
+
+</span>
+
+<br>
+
+
+|    Based on the model diagnostics of residuals, the residuals show non-linearity due to large sample size, values, and number of observations ; thus, the square of independent variables  can greatly describe the dependent variable rather than the value of independent variables. To improve the model, it is recommended to transform the predictors to sqrt (IVs). 
+
+
+</span>
+
+## References
+* Boston University School of Public Health. (2016). Regression Diagnostics. SPH. Retrieved May 30, 2022, from https://sphweb.bumc.bu.edu/otlt/MPH-Modules/BS/R/R5_Correlation-Regression/R5_Correlation-Regression7.html;
+* Educational Attainment in King County. (2017, October 27). King County. Retrieved May 30, 2022, from https://kingcounty.gov/independent/forecasting/King%20County%20Economic%20Indicators/Educational%20Attainment.aspx;
+* Employment Trends in King County. (2016, December 14). King County. Retrieved May 30, 2022, from https://kingcounty.gov/independent/forecasting/King%20County%20Economic%20Indicators/Employment%20Indicators.aspx;
+* Ford. (2015, August 26). Understanding QQ Plots. University of Virginia Library Research Data Services + Sciences. Retrieved May 30, 2022, from https://data.library.virginia.edu/understanding-q-q-plots/;
+* Kellog. (n.d.). A Structural Modeling "Trick" - Nonlinearities. Retrieved May 30, 2022, from https://www.kellogg.northwestern.edu/faculty/weber/emp/_session_3/nonlinearities.htm;
+* King County Sheriff's Office. (n.d.). Washington State Sheriffs' Association. Retrieved May 30, 2022, from http://www.washeriffs.org/so_king.htm;
+* King County, Washington Population 2022. (n.d.). World Population Review. Retrieved May 30, 2022, from https://worldpopulationreview.com/us-counties/wa/king-county-population;
+* Laerd Statistics. (n.d.). Understanding Descriptive and Inferential Statistics. Laerd Statistics. Retrieved May 30, 2022, from https://statistics.laerd.com/statistical-guides/descriptive-inferential-statistics.php;
+* Mindrila, D., & Balentyne, P. (n.d.). Scatterplots and Correlation. Scatterplots and Correlation. Retrieved May 30, 2022, from https://www.westga.edu/academics/research/vrc/assets/docs/scatterplots_and_correlation_notes.pdf;
+* National Institute of Standards and Technology. (n.d.). 1.3.5.11. Measures of Skewness and Kurtosis. Information Technology Laboratory. Retrieved May 29, 2022, from https://www.itl.nist.gov/div898/handbook/eda/section3/eda35b.htm;
+* Rodríguez. (2021). GR's Website. GR's Website. Retrieved May 30, 2022, from https://data.princeton.edu/wws509/notes/c2s9;
+* Salkind, N. J. (2010). Encyclopedia of Research Design. SAGE Research. https://methods.sagepub.com/reference/encyc-of-research-design/n236.xml;
+*University of Washington Lirbraries. (n.d.). King County History - King County Snapshots. University of Washington Libraries Digital Collections. Retrieved May 30, 2022, from https://content.lib.washington.edu/imls/kcsnapshots/history.html.
